@@ -11,15 +11,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest  # 使用最新版本的 Ubuntu
-    env:
-      TAG_NAME: '1.21.4.3-3'  # 设置 TAG_NAME 环境变量
-      
     steps:
+      - name: Release version
+        id: release_version
+        run: |
+          app_version=$(curl -sL "https://api.github.com/repos/openresty/openresty/releases/latest" | jq -r '.tag_name | split("-") | .[0] | ltrimstr("v")')
+          echo "app_version=$app_version" >> $GITHUB_ENV
+
       - name: Checkout specific tag from external repository
         uses: actions/checkout@v3
         with:
           repository: 'openresty/docker-openresty'  # 从 OpenResty Docker 仓库检出代码
-          ref: 'refs/tags/${{ env.TAG_NAME }}' # 检出指定标签
+          ref: 'refs/tags/${{ env.app_version }}' # 检出指定标签
 
       - name: Set up QEMU for multi-platform builds
         uses: docker/setup-qemu-action@v3  # 设置 QEMU 以支持多平台构建
@@ -39,21 +42,16 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}  # Docker Hub 用户名
           password: ${{ secrets.DOCKERHUB_TOKEN }}  # Docker Hub 访问令牌
-          
-      - name: Release version
-        id: release_version
-        run: |
-          app_version=$(curl -sL "https://api.github.com/repos/openresty/openresty/releases/latest" | jq -r '.tag_name | split("-") | .[0]')
-          echo "app_version=$app_version" >> $GITHUB_ENV
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .  # 设置构建上下文
           file: ./focal/Dockerfile  # 指定 Dockerfile 路径
-          platforms: linux/arm/v7  # 支持 ARMv7 架构
+          platforms: |
+            linux/arm/v7
           push: true  # 推送镜像到仓库
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}-focal  # 推送到 Docker Hub
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.app_version }}-focal  # 推送到 Docker Hub
           cache-from: type=gha  # 使用 GitHub Actions 的缓存加速构建
           cache-to: type=gha,mode=max  # 使用 GitHub Actions 缓存，最大化缓存利用
 
