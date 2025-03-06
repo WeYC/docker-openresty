@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main  # 在提交拉取请求时触发
+  workflow_dispatch:
 
 jobs:
   build:
