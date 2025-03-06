@@ -43,7 +43,7 @@ jobs:
       - name: Release version
         id: release_version
         run: |
-          app_version=$(curl -sL "https://api.github.com/repos//openresty/openresty/releases/latest" | jq -r '.tag_name | split("-") | .[0]')
+          app_version=$(curl -sL "https://api.github.com/repos/openresty/openresty/releases/latest" | jq -r '.tag_name | split("-") | .[0]')
           echo "app_version=$app_version" >> $GITHUB_ENV
 
       - name: Build and push
