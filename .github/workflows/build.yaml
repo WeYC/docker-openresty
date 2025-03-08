@@ -15,20 +15,7 @@ jobs:
     env:
       TAG_NAME: '1.25.3.2-2'  # 设置 TAG_NAME 环境变量
       
-    steps:
-      - name: Checkout repository  #检出本仓库代码
-        uses: actions/checkout@v4
-
-      - name: Move the README.me file to tmp
-        run: |
-          echo "🎉🎉🎉${PWD}"
-          ls -l
-          if [ -f "README.me" ];then
-            echo "🎉🎉🎉 Move README.md files"
-            mv README.me /tmp/
-          fi
-          ls -l /tmp
-        
+    steps: 
       - name: Checkout specific tag from external repository
         uses: actions/checkout@v4
         with:
@@ -66,22 +53,12 @@ jobs:
           cache-from: type=gha  # 使用 GitHub Actions 的缓存加速构建
           cache-to: type=gha,mode=max  # 使用 GitHub Actions 缓存，最大化缓存利用
 
-      - name: Move the README.me file to $PWD
-        run: |
-          echo "🎉🎉🎉${PWD}"
-          ls -l
-          if [ -f "README.me" ];then
-            echo "🎉🎉🎉 Move README.md files"
-            mv -f /tmp/README.me $PWD/
-          fi
-          ls -l $PWD | grep "README.md"
-
-      - name: Docker Hub Description
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ secrets.DOCKERHUB_USERNAME }}/openresty
-          readme-filepath: ./README.md
+      # - name: Docker Hub Description
+      #   uses: peter-evans/dockerhub-description@v4
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #     repository: ${{ secrets.DOCKERHUB_USERNAME }}/openresty
+      #     short-description: ${{ github.event.repository.description }}
           
 
