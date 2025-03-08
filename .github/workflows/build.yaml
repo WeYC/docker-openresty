@@ -22,10 +22,12 @@ jobs:
       - name: Move README.me files
         run: |
           echo "🎉🎉🎉${PWD}"
+          ls -l
           if [ -f "README.me" ];then
             echo "🎉🎉🎉 Move README.md files"
             mv README.me /tmp/
           fi
+          ls -l /tmp
         
       - name: Checkout specific tag from external repository
         uses: actions/checkout@v4
