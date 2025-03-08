@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "🎉🎉🎉${PWD}"
           if [ -f "README.me" ];then
-            echo "🎉🎉🎉 Move README.me files"
+            echo "🎉🎉🎉 Move README.md files"
             mv README.me /tmp/
           fi
         
