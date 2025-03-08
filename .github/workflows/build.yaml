@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository  #检出本仓库代码
         uses: actions/checkout@v4
 
-      - name: Move README.me files
+      - name: Move the README.me file to tmp
         run: |
           echo "🎉🎉🎉${PWD}"
           ls -l
@@ -66,12 +66,22 @@ jobs:
           cache-from: type=gha  # 使用 GitHub Actions 的缓存加速构建
           cache-to: type=gha,mode=max  # 使用 GitHub Actions 缓存，最大化缓存利用
 
+      - name: Move the README.me file to $PWD
+        run: |
+          echo "🎉🎉🎉${PWD}"
+          ls -l
+          if [ -f "README.me" ];then
+            echo "🎉🎉🎉 Move README.md files"
+            mv -f /tmp/README.me $PWD/
+          fi
+          ls -l $PWD | grep "README.md"
+
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/openresty
-          readme-filepath: /tmp/README.md
+          short-description: ${{ github.event.repository.description }}
           
 
