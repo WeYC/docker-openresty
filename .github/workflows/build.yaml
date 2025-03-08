@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository  #检出本仓库代码
         uses: actions/checkout@v4
 
-      - name: Move README.me file
+      - name: Move README.me files
         run: |
           echo "🎉🎉🎉${PWD}"
           if [ -f "README.me" ];then
