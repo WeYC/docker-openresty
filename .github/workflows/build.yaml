@@ -18,6 +18,13 @@ jobs:
     steps:
       - name: Checkout repository  #检出本仓库代码
         uses: actions/checkout@v4
+
+      - name: Move README.me file
+        run: |
+          echo "🎉🎉🎉${PWD}"
+          if [ -f "README.me" ];then
+            mv README.me /tmp/
+          fi
         
       - name: Checkout specific tag from external repository
         uses: actions/checkout@v4
@@ -62,6 +69,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/openresty
-          readme-filepath: ../README.md
+          readme-filepath: /tmp/README.md
           
 
