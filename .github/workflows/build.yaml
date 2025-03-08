@@ -16,8 +16,11 @@ jobs:
       TAG_NAME: '1.25.3.2-2'  # 设置 TAG_NAME 环境变量
       
     steps:
+      - name: Checkout repository  #检出本仓库代码
+        uses: actions/checkout@v4
+        
       - name: Checkout specific tag from external repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: 'openresty/docker-openresty'  # 从 OpenResty Docker 仓库检出代码
           ref: 'refs/tags/${{ env.TAG_NAME }}' # 检出指定标签
