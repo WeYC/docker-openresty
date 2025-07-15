@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest  # 使用最新版本的 Ubuntu
     env:
-      TAG_NAME: '1.27.1.2-2-1'  # 设置 TAG_NAME 环境变量
+      TAG_NAME: '1.27.1.2-2'  # 设置 TAG_NAME 环境变量
       
     steps: 
       - name: Checkout specific tag from external repository
@@ -50,7 +50,7 @@ jobs:
             linux/arm/v7
           push: true  # 推送镜像到仓库
           tags: | # 推送到 Docker Hub
-            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}-focal
+            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}-1-focal
             ${{ secrets.DOCKERHUB_USERNAME }}/openresty:latest
           cache-from: type=gha  # 使用 GitHub Actions 的缓存加速构建
           cache-to: type=gha,mode=max  # 使用 GitHub Actions 缓存，最大化缓存利用
