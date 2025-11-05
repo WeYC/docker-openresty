@@ -4,7 +4,7 @@
 ## 由于 OpenResty 官方未提供 armv7l 架构镜像，所以在应用商店启用 OpenResty 前，需要手动修改 OpenResty 镜像版本。
 [1Pane相关文档](https://1panel.cn/docs/v2/faq/server_architecture/#22-openresty)
 
-### 1.27.1.*版本后需要删除nginx.conf
+### 1.27.1.*版本后需要删除nginx.conf一条配置
 ``` diff
 http {
     ...
@@ -23,3 +23,4 @@ http {
 ### [1Panel-dev/appstore](https://github.com/1Panel-dev/appstore)
 
 ### [openresty/docker-openresty](https://github.com/openresty/docker-openresty)
+
