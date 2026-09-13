@@ -16,9 +16,9 @@ on:
         required: true
         default: '4'
       DISTRO:
-        description: 'Target distro (e.g. noble)'
+        description: 'Target distro (e.g. bookworm)'
         required: true
-        default: 'noble'
+        default: 'bookworm'
 
 jobs:
   build:
@@ -54,9 +54,6 @@ jobs:
           push: true
           pull: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
-          build-args: |
-            RESTY_LUAJIT_OPTIONS="-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -mno-sse4.2"
-            RESTY_J=2
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
           provenance: false
@@ -66,7 +63,7 @@ jobs:
             network.host
           labels: |
             org.opencontainers.image.arch=arm
-            org.opencontainers.image.base.name=ubuntu
+            org.opencontainers.image.base.name=debian
             org.opencontainers.image.source=openresty/docker-openresty
             org.opencontainers.image.revision=${{ github.event.inputs.VERSION }}
 
