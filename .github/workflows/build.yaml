@@ -29,6 +29,7 @@ jobs:
   build:
     if: github.event_name == 'push' || (github.event.inputs.VERSION != '' && github.event.inputs.FLAVOR != '' && github.event.inputs.BUILD_NUMBER != '' && github.event.inputs.DISTRO != '')
     runs-on: ubuntu-latest
+    timeout-minutes: 480
     env:
       VERSION: ${{ github.event.inputs.VERSION || '1.31.1.1' }}
       FLAVOR: ${{ github.event.inputs.FLAVOR || '2' }}
@@ -62,6 +63,8 @@ jobs:
           platforms: linux/arm/v7
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
+          build-args: |
+            RESTY_J=1
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
 
