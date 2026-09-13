@@ -54,11 +54,9 @@ jobs:
           push: true
           pull: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
-          target: runtime
           build-args: |
             RESTY_LUAJIT_OPTIONS=-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -mno-sse4.2
             RESTY_J=2
-          compress: true
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
           provenance: false
