@@ -30,13 +30,17 @@ jobs:
     if: github.event_name == 'push' || (github.event.inputs.VERSION != '' && github.event.inputs.FLAVOR != '' && github.event.inputs.BUILD_NUMBER != '' && github.event.inputs.DISTRO != '')
     runs-on: ubuntu-latest
     env:
-      TAG_NAME: ${{ github.event.inputs.VERSION }}-${{ github.event.inputs.FLAVOR }}-${{ github.event.inputs.BUILD_NUMBER }}-${{ github.event.inputs.DISTRO }}
+      VERSION: ${{ github.event.inputs.VERSION || '1.31.1.1' }}
+      FLAVOR: ${{ github.event.inputs.FLAVOR || '2' }}
+      BUILD_NUMBER: ${{ github.event.inputs.BUILD_NUMBER || '4' }}
+      DISTRO: ${{ github.event.inputs.DISTRO || 'noble' }}
+      TAG_NAME: ${{ github.event.inputs.VERSION || '1.31.1.1' }}-${{ github.event.inputs.FLAVOR || '2' }}-${{ github.event.inputs.BUILD_NUMBER || '4' }}-${{ github.event.inputs.DISTRO || 'noble' }}
     steps:
       - name: Checkout specific tag from external repository
         uses: actions/checkout@v4
         with:
           repository: 'openresty/docker-openresty'
-          ref: 'refs/tags/${{ github.event.inputs.VERSION }}-${{ github.event.inputs.FLAVOR }}'
+          ref: 'refs/tags/${{ env.VERSION }}-${{ env.FLAVOR }}'
 
       - name: Set up QEMU for multi-platform builds
         uses: docker/setup-qemu-action@v3
@@ -54,7 +58,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./${{ github.event.inputs.DISTRO }}/Dockerfile
+          file: ./${{ env.DISTRO }}/Dockerfile
           platforms: linux/arm/v7
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
