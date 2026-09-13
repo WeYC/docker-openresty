@@ -11,17 +11,21 @@ on:
         description: 'OpenResty Docker flavor number (e.g. 2)'
         required: true
         default: ''
-      SUFFIX:
-        description: '1Panel version (e.g. 4-noble)'
+      BUILD_NUMBER:
+        description: '1Panel build number (e.g. 4)'
+        required: true
+        default: ''
+      DISTRO:
+        description: 'Target distro (e.g. noble)'
         required: true
         default: ''
 
 jobs:
   build:
-    if: github.event.inputs.VERSION != '' && github.event.inputs.FLAVOR != '' && github.event.inputs.SUFFIX != ''
+    if: github.event.inputs.VERSION != '' && github.event.inputs.FLAVOR != '' && github.event.inputs.BUILD_NUMBER != '' && github.event.inputs.DISTRO != ''
     runs-on: ubuntu-latest
     env:
-      TAG_NAME: ${{ github.event.inputs.VERSION }}-${{ github.event.inputs.FLAVOR }}-${{ github.event.inputs.SUFFIX }}
+      TAG_NAME: ${{ github.event.inputs.VERSION }}-${{ github.event.inputs.FLAVOR }}-${{ github.event.inputs.BUILD_NUMBER }}-${{ github.event.inputs.DISTRO }}
     steps:
       - name: Checkout specific tag from external repository
         uses: actions/checkout@v4
@@ -45,7 +49,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./noble/Dockerfile
+          file: ./${{ github.event.inputs.DISTRO }}/Dockerfile
           platforms: linux/arm64
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
@@ -55,19 +59,10 @@ jobs:
           provenance: false
           sbom: false
           allow: |
-            network.max
+            network.host
           labels: |
             org.opencontainers.image.arch=arm64
             org.opencontainers.image.base.name=ubuntu
             org.opencontainers.image.source=openresty/docker-openresty
             org.opencontainers.image.revision=${{ github.event.inputs.VERSION }}
-
-      # - name: Docker Hub Description
-      #   uses: peter-evans/dockerhub-description@v4
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-      #     repository: ${{ secrets.DOCKERHUB_USERNAME }}/openresty
-      #     short-description: ${{ github.event.repository.description }}
-          
 
