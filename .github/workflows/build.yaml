@@ -23,7 +23,7 @@ on:
       DISTRO:
         description: 'Target distro (e.g. noble)'
         required: true
-        default: 'noble'
+        default: 'focal'
 
 jobs:
   build:
