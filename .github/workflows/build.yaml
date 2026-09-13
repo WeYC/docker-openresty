@@ -3,17 +3,21 @@ name: Build Docker Image
 on:
   workflow_dispatch:
     inputs:
-      TAG_NAME:
-        description: 'Tag name to build (empty to skip)'
-        required: false
+      VERSION:
+        description: 'OpenResty version (e.g. 1.31.1.1)'
+        required: true
+        default: ''
+      SUFFIX:
+        description: 'Tag suffix (e.g. 2-4-noble)'
+        required: true
         default: ''
 
 jobs:
   build:
-    if: github.event.inputs.TAG_NAME != ''
+    if: github.event.inputs.VERSION != '' && github.event.inputs.SUFFIX != ''
     runs-on: ubuntu-latest
     env:
-      TAG_NAME: ${{ github.event.inputs.TAG_NAME }}
+      TAG_NAME: ${{ github.event.inputs.VERSION }}-${{ github.event.inputs.SUFFIX }}
       
     steps: 
       - name: Checkout specific tag from external repository
