@@ -1,6 +1,11 @@
 name: Build Docker Image
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/build.yaml'
   workflow_dispatch:
     inputs:
       VERSION:
@@ -22,7 +27,7 @@ on:
 
 jobs:
   build:
-    if: github.event.inputs.VERSION != '' && github.event.inputs.FLAVOR != '' && github.event.inputs.BUILD_NUMBER != '' && github.event.inputs.DISTRO != ''
+    if: github.event_name == 'push' || (github.event.inputs.VERSION != '' && github.event.inputs.FLAVOR != '' && github.event.inputs.BUILD_NUMBER != '' && github.event.inputs.DISTRO != '')
     runs-on: ubuntu-latest
     env:
       TAG_NAME: ${{ github.event.inputs.VERSION }}-${{ github.event.inputs.FLAVOR }}-${{ github.event.inputs.BUILD_NUMBER }}-${{ github.event.inputs.DISTRO }}
