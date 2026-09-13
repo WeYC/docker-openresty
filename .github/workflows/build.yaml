@@ -7,23 +7,27 @@ on:
         description: 'OpenResty version (e.g. 1.31.1.1)'
         required: true
         default: ''
+      FLAVOR:
+        description: 'OpenResty Docker flavor number (e.g. 2)'
+        required: true
+        default: ''
       SUFFIX:
-        description: 'Tag suffix (e.g. 2-4-noble)'
+        description: '1Panel version (e.g. 4-noble)'
         required: true
         default: ''
 
 jobs:
   build:
-    if: github.event.inputs.VERSION != '' && github.event.inputs.SUFFIX != ''
+    if: github.event.inputs.VERSION != '' && github.event.inputs.FLAVOR != '' && github.event.inputs.SUFFIX != ''
     runs-on: ubuntu-latest
     env:
-      TAG_NAME: ${{ github.event.inputs.VERSION }}-${{ github.event.inputs.SUFFIX }}
+      TAG_NAME: ${{ github.event.inputs.VERSION }}-${{ github.event.inputs.FLAVOR }}-${{ github.event.inputs.SUFFIX }}
     steps:
       - name: Checkout specific tag from external repository
         uses: actions/checkout@v4
         with:
           repository: 'openresty/docker-openresty'
-          ref: 'refs/tags/${{ github.event.inputs.VERSION }}'
+          ref: 'refs/tags/${{ github.event.inputs.VERSION }}-${{ github.event.inputs.FLAVOR }}'
 
       - name: Set up QEMU for multi-platform builds
         uses: docker/setup-qemu-action@v3
