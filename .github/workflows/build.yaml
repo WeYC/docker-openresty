@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       VERSION:
-        description: 'OpenResty version'
+        description: 'OpenResty version (e.g. 1.31.1.1)'
         required: true
         default: '1.31.1.1'
       FLAVOR:
-        description: 'OpenResty Docker flavor number'
+        description: 'OpenResty Docker flavor number (e.g. 2)'
         required: true
         default: '2'
       BUILD_NUMBER:
-        description: '1Panel build number'
+        description: '1Panel build number (e.g. 4)'
         required: true
         default: '4'
       DISTRO:
-        description: 'Target distro'
+        description: 'Target distro (e.g. noble)'
         required: true
         default: 'noble'
 
