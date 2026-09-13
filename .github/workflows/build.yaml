@@ -55,7 +55,7 @@ jobs:
           pull: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
           build-args: |
-            RESTY_LUAJIT_OPTIONS="-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -mno-sse4.2"
+            RESTY_LUAJIT_OPTIONS=--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -mno-sse4.2'
             RESTY_J=1
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
