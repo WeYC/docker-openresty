@@ -41,14 +41,22 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./focal/Dockerfile
-          platforms: linux/arm/v7
+          file: ./noble/Dockerfile
+          platforms: linux/arm64
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
+          compress: true
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
           provenance: false
           sbom: false
+          allow: |
+            network.max
+          labels: |
+            org.opencontainers.image.arch=arm64
+            org.opencontainers.image.base.name=ubuntu
+            org.opencontainers.image.source=openresty/docker-openresty
+            org.opencontainers.image.revision=${{ github.event.inputs.VERSION }}
 
       # - name: Docker Hub Description
       #   uses: peter-evans/dockerhub-description@v4
