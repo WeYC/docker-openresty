@@ -50,7 +50,7 @@ jobs:
         with:
           context: .
           file: ./${{ github.event.inputs.DISTRO }}/Dockerfile
-          platforms: linux/arm64
+          platforms: linux/arm/v7
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
           compress: true
@@ -61,7 +61,7 @@ jobs:
           allow: |
             network.host
           labels: |
-            org.opencontainers.image.arch=arm64
+            org.opencontainers.image.arch=arm
             org.opencontainers.image.base.name=ubuntu
             org.opencontainers.image.source=openresty/docker-openresty
             org.opencontainers.image.revision=${{ github.event.inputs.VERSION }}
