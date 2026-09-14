@@ -9,32 +9,32 @@ on:
   workflow_dispatch:
     inputs:
       VERSION:
-        description: 'OpenResty version (e.g. 1.31.1.1)'
+        description: 'OpenResty version (e.g. 1.27.1.2)'
         required: true
-        default: '1.31.1.1'
+        default: '1.27.1.2'
       FLAVOR:
         description: 'OpenResty Docker flavor number (e.g. 2)'
         required: true
         default: '2'
       BUILD_NUMBER:
-        description: '1Panel build number (e.g. 4)'
+        description: '1Panel build number (e.g. 3)'
         required: true
-        default: '4'
+        default: '3'
       DISTRO:
-        description: 'Target distro (e.g. noble)'
+        description: 'Target distro (e.g. focal)'
         required: true
-        default: 'bookworm'
+        default: 'focal'
 
 jobs:
   build:
     if: github.event_name == 'push' || (github.event.inputs.VERSION != '' && github.event.inputs.FLAVOR != '' && github.event.inputs.BUILD_NUMBER != '' && github.event.inputs.DISTRO != '')
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ github.event.inputs.VERSION || '1.31.1.1' }}
+      VERSION: ${{ github.event.inputs.VERSION || '1.27.1.2' }}
       FLAVOR: ${{ github.event.inputs.FLAVOR || '2' }}
-      BUILD_NUMBER: ${{ github.event.inputs.BUILD_NUMBER || '4' }}
-      DISTRO: ${{ github.event.inputs.DISTRO || 'bookworm' }}
-      TAG_NAME: ${{ github.event.inputs.VERSION || '1.31.1.1' }}-${{ github.event.inputs.FLAVOR || '2' }}-${{ github.event.inputs.BUILD_NUMBER || '4' }}-${{ github.event.inputs.DISTRO || 'bookworm' }}
+      BUILD_NUMBER: ${{ github.event.inputs.BUILD_NUMBER || '3' }}
+      DISTRO: ${{ github.event.inputs.DISTRO || 'focal' }}
+      TAG_NAME: ${{ github.event.inputs.VERSION || '1.27.1.2' }}-${{ github.event.inputs.FLAVOR || '2' }}-${{ github.event.inputs.BUILD_NUMBER || '3' }}-${{ github.event.inputs.DISTRO || 'focal' }}
     steps:
       - name: Checkout specific tag from external repository
         uses: actions/checkout@v4
