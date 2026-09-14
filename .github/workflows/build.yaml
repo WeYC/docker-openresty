@@ -9,32 +9,17 @@ on:
   workflow_dispatch:
     inputs:
       VERSION:
-        description: 'OpenResty version (e.g. 1.27.1.2)'
+        description: 'OpenResty version (e.g. 1.27.1.2-5-1-focal)'
         required: true
-        default: '1.27.1.2'
-      FLAVOR:
-        description: 'OpenResty Docker flavor number (e.g. 5)'
-        required: true
-        default: '5'
-      BUILD_NUMBER:
-        description: '1Panel build number (e.g. 1)'
-        required: true
-        default: '1'
-      DISTRO:
-        description: 'Target distro (e.g. focal)'
-        required: true
-        default: 'focal'
+        default: '1.27.1.2-5-1-focal'
 
 jobs:
   build:
-    if: github.event_name == 'push' || (github.event.inputs.VERSION != '' && github.event.inputs.FLAVOR != '' && github.event.inputs.BUILD_NUMBER != '' && github.event.inputs.DISTRO != '')
+    if: github.event_name == 'push' || github.event.inputs.VERSION != ''
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ github.event.inputs.VERSION || '1.27.1.2' }}
-      FLAVOR: ${{ github.event.inputs.FLAVOR || '5' }}
-      BUILD_NUMBER: ${{ github.event.inputs.BUILD_NUMBER || '1' }}
-      DISTRO: ${{ github.event.inputs.DISTRO || 'focal' }}
-      TAG_NAME: ${{ github.event.inputs.VERSION || '1.27.1.2' }}-${{ github.event.inputs.FLAVOR || '5' }}-${{ github.event.inputs.BUILD_NUMBER || '1' }}-${{ github.event.inputs.DISTRO || 'focal' }}
+      VERSION: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
+      TAG_NAME: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
     steps:
       - name: Checkout current repository
         uses: actions/checkout@v4
@@ -62,7 +47,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./${{ env.DISTRO }}/Dockerfile
+          file: ./focal/Dockerfile
           platforms: linux/arm/v7
           push: true
           tags: |
