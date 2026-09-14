@@ -13,13 +13,13 @@ on:
         required: true
         default: '1.27.1.2'
       FLAVOR:
-        description: 'OpenResty Docker flavor number (e.g. 2)'
+        description: 'OpenResty Docker flavor number (e.g. 5)'
         required: true
-        default: '2'
+        default: '5'
       BUILD_NUMBER:
-        description: '1Panel build number (e.g. 3)'
+        description: '1Panel build number (e.g. 1)'
         required: true
-        default: '3'
+        default: '1'
       DISTRO:
         description: 'Target distro (e.g. focal)'
         required: true
@@ -31,16 +31,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ github.event.inputs.VERSION || '1.27.1.2' }}
-      FLAVOR: ${{ github.event.inputs.FLAVOR || '2' }}
-      BUILD_NUMBER: ${{ github.event.inputs.BUILD_NUMBER || '3' }}
+      FLAVOR: ${{ github.event.inputs.FLAVOR || '5' }}
+      BUILD_NUMBER: ${{ github.event.inputs.BUILD_NUMBER || '1' }}
       DISTRO: ${{ github.event.inputs.DISTRO || 'focal' }}
-      TAG_NAME: ${{ github.event.inputs.VERSION || '1.27.1.2' }}-${{ github.event.inputs.FLAVOR || '2' }}-${{ github.event.inputs.BUILD_NUMBER || '3' }}-${{ github.event.inputs.DISTRO || 'focal' }}
+      TAG_NAME: ${{ github.event.inputs.VERSION || '1.27.1.2' }}-${{ github.event.inputs.FLAVOR || '5' }}-${{ github.event.inputs.BUILD_NUMBER || '1' }}-${{ github.event.inputs.DISTRO || 'focal' }}
     steps:
-      - name: Checkout specific tag from external repository
+      - name: Checkout current repository
         uses: actions/checkout@v4
-        with:
-          repository: 'openresty/docker-openresty'
-          ref: 'refs/tags/${{ env.VERSION }}-${{ env.FLAVOR }}'
 
       - name: Set up QEMU for multi-platform builds
         uses: docker/setup-qemu-action@v3
