@@ -6,31 +6,23 @@ on:
       - main
     paths:
       - '.github/workflows/build.yaml'
+      - 'focal/Dockerfile'
+      - 'nginx.conf'
+      - 'nginx.vh.default.conf'
   workflow_dispatch:
     inputs:
       VERSION:
-        description: 'Version (e.g. 1.27.1.2-5-1-focal)'
+        description: 'OpenResty version (e.g. 1.27.1.2)'
         required: true
-        default: '1.27.1.2-5-1-focal'
+        default: '1.27.1.2'
 
 jobs:
   build:
     if: github.event_name == 'push' || github.event.inputs.VERSION != ''
     runs-on: ubuntu-latest
     env:
-      TAG_NAME: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
+      VERSION: ${{ github.event.inputs.VERSION || '1.27.1.2' }}
     steps:
-      - name: Parse version string
-        run: |
-          VERSION="${{ env.TAG_NAME }}"
-          # Split by '-' and extract components
-          IFS='-' read -r RESTY_VERSION FLAVOR BUILD_NUMBER DISTRO <<< "$VERSION"
-          echo "RESTY_VERSION=${RESTY_VERSION}" >> $GITHUB_ENV
-          echo "FLAVOR=${FLAVOR}" >> $GITHUB_ENV
-          echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
-          echo "DISTRO=${DISTRO}" >> $GITHUB_ENV
-          echo "Parsed: version=${RESTY_VERSION}, flavor=${FLAVOR}, build=${NUMBER}, distro=${DISTRO}"
-
       - name: Checkout current repository
         uses: actions/checkout@v4
 
@@ -57,13 +49,13 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./${{ env.DISTRO }}/Dockerfile
+          file: ./focal/Dockerfile
           build-args: |
-            RESTY_VERSION=${{ env.RESTY_VERSION }}
+            RESTY_VERSION=${{ env.VERSION }}
           platforms: linux/arm/v7
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.VERSION }}-5-1-focal
             ${{ secrets.DOCKERHUB_USERNAME }}/openresty:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
