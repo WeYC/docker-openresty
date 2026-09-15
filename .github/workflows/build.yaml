@@ -6,12 +6,10 @@ on:
       - main
     paths:
       - '.github/workflows/build.yaml'
-      - 'focal/Dockerfile'
-      - 'nginx.conf'
   workflow_dispatch:
     inputs:
       VERSION:
-        description: '1Panel OpenResty version (e.g. 1.27.1.2-5-1-focal)'
+        description: 'Version (e.g. 1.27.1.2-5-1-focal)'
         required: true
         default: '1.27.1.2-5-1-focal'
 
@@ -22,6 +20,17 @@ jobs:
     env:
       TAG_NAME: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
     steps:
+      - name: Parse version string
+        run: |
+          VERSION="${{ env.TAG_NAME }}"
+          # Split by '-' and extract components
+          IFS='-' read -r RESTY_VERSION FLAVOR BUILD_NUMBER DISTRO <<< "$VERSION"
+          echo "RESTY_VERSION=${RESTY_VERSION}" >> $GITHUB_ENV
+          echo "FLAVOR=${FLAVOR}" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
+          echo "DISTRO=${DISTRO}" >> $GITHUB_ENV
+          echo "Parsed: version=${RESTY_VERSION}, flavor=${FLAVOR}, build=${NUMBER}, distro=${DISTRO}"
+
       - name: Checkout current repository
         uses: actions/checkout@v4
 
@@ -48,9 +57,9 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./focal/Dockerfile
+          file: ./${{ env.DISTRO }}/Dockerfile
           build-args: |
-            PANEL_OPENRESTY_VERSION=${{ env.TAG_NAME }}
+            RESTY_VERSION=${{ env.RESTY_VERSION }}
           platforms: linux/arm/v7
           push: true
           tags: |
