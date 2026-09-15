@@ -136,6 +136,7 @@ RUN echo "STEP 1: Installing build dependencies" \
         wget \
         zlib1g-dev \
         git \
+        cmake \
         ${RESTY_ADD_PACKAGE_BUILDDEPS} \
         ${RESTY_ADD_PACKAGE_RUNDEPS} \
     && echo "STEP 1: Done"
@@ -185,13 +186,21 @@ RUN echo "STEP 3: Building PCRE2 ${RESTY_PCRE_VERSION}" \
     && CFLAGS="-g -O3" make -j${RESTY_J} install \
     && echo "STEP 3: Done"
 
-# Step 4: Clone ngx_brotli
-RUN echo "STEP 4: Cloning ngx_brotli" \
+# Step 4: Clone ngx_brotli and build brotli library
+RUN echo "STEP 4: Cloning ngx_brotli and building brotli" \
     && cd /tmp \
     && git clone --recursive https://github.com/google/ngx_brotli.git \
     && cd ngx_brotli \
     && git checkout ${NGX_BROTLI_VERSION} \
     && git submodule update --init --recursive \
+    && cd /tmp/ngx_brotli/deps/brotli \
+    && mkdir -p out && cd out \
+    && cmake -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        .. \
+    && cmake --build . --config Release -j${RESTY_J} \
+    && cmake --build . --target install \
     && echo "STEP 4: Done"
 
 # Step 5: Build OpenResty
