@@ -13,17 +13,24 @@ on:
   workflow_dispatch:
     inputs:
       VERSION:
-        description: 'OpenResty version (e.g. 1.27.1.2)'
+        description: 'Version (e.g. 1.27.1.2-5-1-focal)'
         required: true
-        default: '1.27.1.2'
+        default: '1.27.1.2-5-1-focal'
 
 jobs:
   build:
     if: github.event_name == 'push' || github.event.inputs.VERSION != ''
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ github.event.inputs.VERSION || '1.27.1.2' }}
+      TAG_NAME: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
     steps:
+      - name: Parse version string
+        run: |
+          VERSION="${{ env.TAG_NAME }}"
+          IFS='-' read -r RESTY_VERSION FLAVOR BUILD_NUMBER DISTRO <<< "$VERSION"
+          echo "RESTY_VERSION=${RESTY_VERSION}" >> $GITHUB_ENV
+          echo "DISTRO=${DISTRO}" >> $GITHUB_ENV
+
       - name: Checkout current repository
         uses: actions/checkout@v4
 
@@ -43,13 +50,13 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./focal/Dockerfile
+          file: ./${{ env.DISTRO }}/Dockerfile
           build-args: |
-            RESTY_VERSION=${{ env.VERSION }}
+            RESTY_VERSION=${{ env.RESTY_VERSION }}
           platforms: linux/arm/v7
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.VERSION }}-5-1-focal
+            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.TAG_NAME }}
             ${{ secrets.DOCKERHUB_USERNAME }}/openresty:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
