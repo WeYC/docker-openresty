@@ -136,7 +136,7 @@ RUN echo "STEP 1: Installing build dependencies" \
         wget \
         zlib1g-dev \
         git \
-        cmake \
+        python3-pip \
         ${RESTY_ADD_PACKAGE_BUILDDEPS} \
         ${RESTY_ADD_PACKAGE_RUNDEPS} \
     && echo "STEP 1: Done"
@@ -193,6 +193,7 @@ RUN echo "STEP 4: Cloning ngx_brotli and building brotli" \
     && cd ngx_brotli \
     && git checkout ${NGX_BROTLI_VERSION} \
     && git submodule update --init --recursive \
+    && pip3 install cmake --break-system-packages \
     && cd /tmp/ngx_brotli/deps/brotli \
     && mkdir -p out && cd out \
     && cmake -DCMAKE_BUILD_TYPE=Release \
@@ -201,6 +202,7 @@ RUN echo "STEP 4: Cloning ngx_brotli and building brotli" \
         .. \
     && cmake --build . --config Release -j${RESTY_J} \
     && cmake --build . --target install \
+    && ldconfig \
     && echo "STEP 4: Done"
 
 # Step 5: Build OpenResty
