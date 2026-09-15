@@ -1,2 +1,2 @@
--- Stub init.lua for 1pwaf compatibility
--- This is a fake/stub file to prevent nginx startup errors
+-- Stub init.lua for 1Panel WAF compatibility
+-- Placeholder: actual 1pwaf Lua code is not open source
