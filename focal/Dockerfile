@@ -208,10 +208,8 @@ FROM ubuntu:focal AS runtime
 
 LABEL maintainer="Evan Wies <evan@neomantra.net>"
 
-# Install runtime dependencies only (with cache mount)
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    echo "Installing runtime dependencies" \
+# Install runtime dependencies only
+RUN echo "Installing runtime dependencies" \
     && DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -224,12 +222,16 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libreadline8 \
         libxslt1.1 \
         zlib1g \
+    && DEBIAN_FRONTEND=noninteractive apt-get autoremove -y \
+    && DEBIAN_FRONTEND=noninteractive apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
     && echo "Runtime dependencies installed"
 
 # Copy built artifacts from builder
 COPY --from=builder /usr/local/openresty/ /usr/local/openresty/
 COPY --from=builder /usr/local/lib/libbrotli* /usr/local/lib/
-RUN ldconfig
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf \
+    && ldconfig
 
 # Final setup
 RUN echo "STEP 8: Final setup" \
