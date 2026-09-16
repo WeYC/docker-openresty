@@ -1,30 +1,41 @@
-# Dockerfile - Ubuntu Focal (Multi-stage build + cache mount)
-# https://github.com/openresty/docker-openresty
+# Dockerfile - Ubuntu Focal
+# Based on: https://github.com/openresty/docker-openresty (archive/Dockerfile.focal)
 # Modified: added ngx_brotli module for 1Panel compatibility
-# Optimized: multi-stage build + BuildKit cache mounts
 
-# syntax=docker/dockerfile:1
+ARG RESTY_IMAGE_BASE="ubuntu"
+ARG RESTY_IMAGE_TAG="focal"
 
-# ============================================================
-# Stage 1: Builder
-# ============================================================
-FROM ubuntu:focal AS builder
+FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
+LABEL maintainer="Evan Wies <evan@neomantra.net>"
+
+# Docker Build Arguments
+ARG RESTY_IMAGE_BASE="ubuntu"
+ARG RESTY_IMAGE_TAG="focal"
 ARG RESTY_VERSION="1.27.1.2"
-ARG RESTY_LUAROCKS_VERSION="3.12.0"
-ARG RESTY_OPENSSL_VERSION="3.4.1"
-ARG RESTY_OPENSSL_PATCH_VERSION="3.4.1"
+ARG RESTY_LUAROCKS_VERSION="3.12.2"
+
+# https://github.com/openresty/openresty-packaging/blob/master/deb/openresty-openssl3/debian/rules
+ARG RESTY_OPENSSL_VERSION="3.5.5"
+ARG RESTY_OPENSSL_PATCH_VERSION="3.5.5"
 ARG RESTY_OPENSSL_URL_BASE="https://github.com/openssl/openssl/releases/download/openssl-${RESTY_OPENSSL_VERSION}"
 ARG RESTY_OPENSSL_BUILD_OPTIONS="enable-camellia enable-seed enable-rfc3779 enable-cms enable-md2 enable-rc5 \
-        enable-weak-ssl-ciphers enable-ssl3 enable-ssl3-method enable-ktls enable-fips"
+        enable-weak-ssl-ciphers enable-ssl3 enable-ssl3-method enable-md2 enable-ktls enable-fips \
+        "
+
+# https://github.com/openresty/openresty-packaging/blob/master/deb/openresty-pcre2/debian/rules
 ARG RESTY_PCRE_VERSION="10.44"
 ARG RESTY_PCRE_SHA256="86b9cb0aa3bcb7994faa88018292bc704cdbb708e785f7c74352ff6ea7d3175b"
 ARG RESTY_PCRE_BUILD_OPTIONS="--enable-jit --enable-pcre2grep-jit --disable-bsr-anycrlf --disable-coverage --disable-ebcdic --disable-fuzz-support \
     --disable-jit-sealloc --disable-never-backslash-C --enable-newline-is-lf --enable-pcre2-8 --enable-pcre2-16 --enable-pcre2-32 \
     --enable-pcre2grep-callout --enable-pcre2grep-callout-fork --disable-pcre2grep-libbz2 --disable-pcre2grep-libz --disable-pcre2test-libedit \
-    --enable-percent-zt --disable-rebuild-chartables --enable-shared --disable-static --disable-silent-rules --enable-unicode --disable-valgrind"
+    --enable-percent-zt --disable-rebuild-chartables --enable-shared --disable-static --disable-silent-rules --enable-unicode --disable-valgrind \
+    "
+
 ARG RESTY_J="1"
 ARG NGX_BROTLI_VERSION="master"
+
+# https://github.com/openresty/openresty-packaging/blob/master/deb/openresty/debian/rules
 ARG RESTY_CONFIG_OPTIONS="\
     --with-compat \
     --without-http_rds_json_module \
@@ -60,20 +71,50 @@ ARG RESTY_CONFIG_OPTIONS="\
     --with-stream \
     --with-stream_ssl_module \
     --with-stream_ssl_preread_module \
-    --with-threads"
+    --with-threads \
+    "
 ARG RESTY_CONFIG_OPTIONS_MORE=""
 ARG RESTY_LUAJIT_OPTIONS="--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'"
 ARG RESTY_PCRE_OPTIONS="--with-pcre-jit"
 
+ARG RESTY_ADD_PACKAGE_BUILDDEPS=""
+ARG RESTY_ADD_PACKAGE_RUNDEPS=""
+ARG RESTY_EVAL_PRE_CONFIGURE=""
+ARG RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE=""
+ARG RESTY_EVAL_PRE_MAKE=""
+ARG RESTY_EVAL_POST_MAKE=""
+
+# These are not intended to be user-specified
 ARG _RESTY_CONFIG_DEPS="--with-pcre \
     --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/openresty/pcre2/include -I/usr/local/openresty/openssl3/include' \
-    --with-ld-opt='-L/usr/local/openresty/pcre2/lib -L/usr/local/openresty/openssl3/lib -Wl,-rpath,/usr/local/openresty/pcre2/lib:/usr/local/openresty/openssl3/lib'"
+    --with-ld-opt='-L/usr/local/openresty/pcre2/lib -L/usr/local/openresty/openssl3/lib -Wl,-rpath,/usr/local/openresty/pcre2/lib:/usr/local/openresty/openssl3/lib' \
+    "
 
-# Install build dependencies (with cache mount)
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    echo "STEP 1: Installing build dependencies" \
-    && DEBIAN_FRONTEND=noninteractive apt-get update \
+LABEL resty_image_base="${RESTY_IMAGE_BASE}"
+LABEL resty_image_tag="${RESTY_IMAGE_TAG}"
+LABEL resty_version="${RESTY_VERSION}"
+LABEL resty_luarocks_version="${RESTY_LUAROCKS_VERSION}"
+LABEL resty_openssl_version="${RESTY_OPENSSL_VERSION}"
+LABEL resty_openssl_patch_version="${RESTY_OPENSSL_PATCH_VERSION}"
+LABEL resty_openssl_url_base="${RESTY_OPENSSL_URL_BASE}"
+LABEL resty_openssl_build_options="${RESTY_OPENSSL_BUILD_OPTIONS}"
+LABEL resty_pcre_version="${RESTY_PCRE_VERSION}"
+LABEL resty_pcre_build_options="${RESTY_PCRE_BUILD_OPTIONS}"
+LABEL resty_pcre_sha256="${RESTY_PCRE_SHA256}"
+LABEL resty_config_options="${RESTY_CONFIG_OPTIONS}"
+LABEL resty_config_options_more="${RESTY_CONFIG_OPTIONS_MORE}"
+LABEL resty_config_deps="${_RESTY_CONFIG_DEPS}"
+LABEL resty_add_package_builddeps="${RESTY_ADD_PACKAGE_BUILDDEPS}"
+LABEL resty_add_package_rundeps="${RESTY_ADD_PACKAGE_RUNDEPS}"
+LABEL resty_eval_pre_configure="${RESTY_EVAL_PRE_CONFIGURE}"
+LABEL resty_eval_post_download_pre_configure="${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}"
+LABEL resty_eval_pre_make="${RESTY_EVAL_PRE_MAKE}"
+LABEL resty_eval_post_make="${RESTY_EVAL_POST_MAKE}"
+LABEL resty_luajit_options="${RESTY_LUAJIT_OPTIONS}"
+LABEL resty_pcre_options="${RESTY_PCRE_OPTIONS}"
+
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
@@ -91,27 +132,25 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         wget \
         zlib1g-dev \
         git \
-        python3-pip \
-        gpg \
-    && curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg \
-    && echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list > /dev/null \
-    && DEBIAN_FRONTEND=noninteractive apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends cmake \
-    && update-ca-certificates --fresh \
-    && echo "STEP 1: Done"
-
-# Build OpenSSL (with download cache)
-RUN --mount=type=cache,target=/tmp/cache,sharing=locked \
-    echo "STEP 2: Building OpenSSL ${RESTY_OPENSSL_VERSION}" \
+        cmake \
+        ${RESTY_ADD_PACKAGE_BUILDDEPS} \
+        ${RESTY_ADD_PACKAGE_RUNDEPS} \
     && cd /tmp \
-    && if [ ! -f /tmp/cache/openssl-${RESTY_OPENSSL_VERSION}.tar.gz ]; then \
-        curl -fSL "${RESTY_OPENSSL_URL_BASE}/openssl-${RESTY_OPENSSL_VERSION}.tar.gz" -o /tmp/cache/openssl-${RESTY_OPENSSL_VERSION}.tar.gz ; \
-    fi \
-    && cp /tmp/cache/openssl-${RESTY_OPENSSL_VERSION}.tar.gz . \
+    && if [ -n "${RESTY_EVAL_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_PRE_CONFIGURE}); fi \
+    && curl -fSL "${RESTY_OPENSSL_URL_BASE}/openssl-${RESTY_OPENSSL_VERSION}.tar.gz" -o openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
     && tar xzf openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
     && cd openssl-${RESTY_OPENSSL_VERSION} \
     && if [ $(echo ${RESTY_OPENSSL_VERSION} | cut -c 1-2) = "3." ] ; then \
         echo 'patching OpenSSL 3.x for OpenResty' \
+        && curl -s https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-${RESTY_OPENSSL_PATCH_VERSION}-sess_set_get_cb_yield.patch | patch -p1 ; \
+    fi \
+    && if [ $(echo ${RESTY_OPENSSL_VERSION} | cut -c 1-5) = "1.1.1" ] ; then \
+        echo 'patching OpenSSL 1.1.1 for OpenResty' \
+        && curl -s https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-${RESTY_OPENSSL_PATCH_VERSION}-sess_set_get_cb_yield.patch | patch -p1 ; \
+    fi \
+    && if [ $(echo ${RESTY_OPENSSL_VERSION} | cut -c 1-5) = "1.1.0" ] ; then \
+        echo 'patching OpenSSL 1.1.0 for OpenResty' \
+        && curl -s https://raw.githubusercontent.com/openresty/openresty/ed328977028c3ec3033bc25873ee360056e247cd/patches/openssl-1.1.0j-parallel_build_fix.patch | patch -p1 \
         && curl -s https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-${RESTY_OPENSSL_PATCH_VERSION}-sess_set_get_cb_yield.patch | patch -p1 ; \
     fi \
     && ./config \
@@ -122,16 +161,8 @@ RUN --mount=type=cache,target=/tmp/cache,sharing=locked \
       ${RESTY_OPENSSL_BUILD_OPTIONS} \
     && make -j${RESTY_J} \
     && make -j${RESTY_J} install_sw \
-    && echo "STEP 2: Done"
-
-# Build PCRE2 (with download cache)
-RUN --mount=type=cache,target=/tmp/cache,sharing=locked \
-    echo "STEP 3: Building PCRE2 ${RESTY_PCRE_VERSION}" \
     && cd /tmp \
-    && if [ ! -f /tmp/cache/pcre2-${RESTY_PCRE_VERSION}.tar.gz ]; then \
-        curl -fSL "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${RESTY_PCRE_VERSION}/pcre2-${RESTY_PCRE_VERSION}.tar.gz" -o /tmp/cache/pcre2-${RESTY_PCRE_VERSION}.tar.gz ; \
-    fi \
-    && cp /tmp/cache/pcre2-${RESTY_PCRE_VERSION}.tar.gz . \
+    && curl -fSL "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${RESTY_PCRE_VERSION}/pcre2-${RESTY_PCRE_VERSION}.tar.gz" -o pcre2-${RESTY_PCRE_VERSION}.tar.gz \
     && echo "${RESTY_PCRE_SHA256}  pcre2-${RESTY_PCRE_VERSION}.tar.gz" | shasum -a 256 --check \
     && tar xzf pcre2-${RESTY_PCRE_VERSION}.tar.gz \
     && cd /tmp/pcre2-${RESTY_PCRE_VERSION} \
@@ -141,22 +172,12 @@ RUN --mount=type=cache,target=/tmp/cache,sharing=locked \
         ${RESTY_PCRE_BUILD_OPTIONS} \
     && CFLAGS="-g -O3" make -j${RESTY_J} \
     && CFLAGS="-g -O3" make -j${RESTY_J} install \
-    && echo "STEP 3: Done"
-
-# Clone ngx_brotli and build brotli library (with git cache)
-RUN --mount=type=cache,target=/tmp/cache,sharing=locked \
-    echo "STEP 4: Cloning ngx_brotli and building brotli" \
     && cd /tmp \
-    && if [ -d /tmp/cache/ngx_brotli ]; then \
-        cp -r /tmp/cache/ngx_brotli . ; \
-    else \
-        git clone --recursive https://github.com/google/ngx_brotli.git /tmp/cache/ngx_brotli ; \
-        cp -r /tmp/cache/ngx_brotli . ; \
-    fi \
+    && git clone --recursive https://github.com/google/ngx_brotli.git \
     && cd ngx_brotli \
     && git checkout ${NGX_BROTLI_VERSION} \
     && git submodule update --init --recursive \
-    && cd /tmp/ngx_brotli/deps/brotli \
+    && cd deps/brotli \
     && mkdir -p out && cd out \
     && cmake -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=ON \
@@ -165,32 +186,23 @@ RUN --mount=type=cache,target=/tmp/cache,sharing=locked \
     && cmake --build . --config Release -j${RESTY_J} \
     && cmake --build . --target install \
     && ldconfig \
-    && echo "STEP 4: Done"
-
-# Build OpenResty (with download cache)
-RUN --mount=type=cache,target=/tmp/cache,sharing=locked \
-    echo "STEP 5: Building OpenResty ${RESTY_VERSION}" \
     && cd /tmp \
-    && if [ ! -f /tmp/cache/openresty-${RESTY_VERSION}.tar.gz ]; then \
-        curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o /tmp/cache/openresty-${RESTY_VERSION}.tar.gz ; \
-    fi \
-    && cp /tmp/cache/openresty-${RESTY_VERSION}.tar.gz . \
+    && curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
     && tar xzf openresty-${RESTY_VERSION}.tar.gz \
     && cd /tmp/openresty-${RESTY_VERSION} \
+    && if [ -n "${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}); fi \
     && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
         --add-dynamic-module=/tmp/ngx_brotli \
+    && if [ -n "${RESTY_EVAL_PRE_MAKE}" ]; then eval $(echo ${RESTY_EVAL_PRE_MAKE}); fi \
     && make -j${RESTY_J} \
     && make -j${RESTY_J} install \
-    && echo "STEP 5: Done"
-
-# Build LuaRocks (with download cache)
-RUN --mount=type=cache,target=/tmp/cache,sharing=locked \
-    echo "STEP 6: Building LuaRocks ${RESTY_LUAROCKS_VERSION}" \
     && cd /tmp \
-    && if [ ! -f /tmp/cache/luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz ]; then \
-        curl -fSL https://luarocks.github.io/luarocks/releases/luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz -o /tmp/cache/luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz ; \
-    fi \
-    && cp /tmp/cache/luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz . \
+    && rm -rf \
+        openssl-${RESTY_OPENSSL_VERSION}.tar.gz openssl-${RESTY_OPENSSL_VERSION} \
+        pcre2-${RESTY_PCRE_VERSION}.tar.gz pcre2-${RESTY_PCRE_VERSION} \
+        openresty-${RESTY_VERSION}.tar.gz openresty-${RESTY_VERSION} \
+        ngx_brotli \
+    && curl -fSL https://luarocks.github.io/luarocks/releases/luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz -o luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
     && tar xzf luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
     && cd luarocks-${RESTY_LUAROCKS_VERSION} \
     && ./configure \
@@ -199,48 +211,14 @@ RUN --mount=type=cache,target=/tmp/cache,sharing=locked \
         --with-lua-include=/usr/local/openresty/luajit/include/luajit-2.1 \
     && make build \
     && make install \
-    && echo "STEP 6: Done"
-
-# ============================================================
-# Stage 2: Runtime
-# ============================================================
-FROM ubuntu:focal AS runtime
-
-LABEL maintainer="Evan Wies <evan@neomantra.net>"
-
-# Install runtime dependencies only
-RUN echo "Installing runtime dependencies" \
-    && DEBIAN_FRONTEND=noninteractive apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates \
-        curl \
-        gettext-base \
-        libgd3 \
-        libgeoip1 \
-        libncurses5 \
-        libperl5.30 \
-        libreadline8 \
-        libxslt1.1 \
-        zlib1g \
+    && cd /tmp \
+    && if [ -n "${RESTY_EVAL_POST_MAKE}" ]; then eval $(echo ${RESTY_EVAL_POST_MAKE}); fi \
+    && rm -rf luarocks-${RESTY_LUAROCKS_VERSION} luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
+    && if [ -n "${RESTY_ADD_PACKAGE_BUILDDEPS}" ]; then DEBIAN_FRONTEND=noninteractive apt-get remove -y --purge ${RESTY_ADD_PACKAGE_BUILDDEPS} ; fi \
     && DEBIAN_FRONTEND=noninteractive apt-get autoremove -y \
-    && DEBIAN_FRONTEND=noninteractive apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && echo "Runtime dependencies installed"
-
-# Copy built artifacts from builder
-COPY --from=builder /usr/local/openresty/ /usr/local/openresty/
-COPY --from=builder /usr/local/lib/libbrotli* /usr/local/lib/
-RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf \
-    && ldconfig
-
-# Final setup
-RUN echo "STEP 8: Final setup" \
     && mkdir -p /var/run/openresty \
-    && mkdir -p /usr/local/openresty/nginx/logs \
-    && mkdir -p /usr/local/openresty/1pwaf/libraries \
     && ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \
-    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log \
-    && echo "STEP 8: Done"
+    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log
 
 # Add additional binaries into PATH for convenience
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
