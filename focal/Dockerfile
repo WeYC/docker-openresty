@@ -193,7 +193,7 @@ RUN echo "STEP 4: Cloning ngx_brotli and building brotli" \
     && cd ngx_brotli \
     && git checkout ${NGX_BROTLI_VERSION} \
     && git submodule update --init --recursive \
-    && pip3 install cmake --break-system-packages \
+    && pip3 install cmake \
     && cd /tmp/ngx_brotli/deps/brotli \
     && mkdir -p out && cd out \
     && cmake -DCMAKE_BUILD_TYPE=Release \
