@@ -137,8 +137,10 @@ RUN echo "STEP 1: Installing build dependencies" \
         zlib1g-dev \
         git \
         python3-pip \
+        cmake \
         ${RESTY_ADD_PACKAGE_BUILDDEPS} \
         ${RESTY_ADD_PACKAGE_RUNDEPS} \
+    && update-ca-certificates --fresh \
     && echo "STEP 1: Done"
 
 # Step 2: Build OpenSSL
@@ -193,7 +195,6 @@ RUN echo "STEP 4: Cloning ngx_brotli and building brotli" \
     && cd ngx_brotli \
     && git checkout ${NGX_BROTLI_VERSION} \
     && git submodule update --init --recursive \
-    && pip3 install cmake \
     && cd /tmp/ngx_brotli/deps/brotli \
     && mkdir -p out && cd out \
     && cmake -DCMAKE_BUILD_TYPE=Release \
