@@ -23,10 +23,10 @@ jobs:
   build-base:
     uses: ./.github/workflows/build-base.yml
     with:
-      version: ${{ github.event.inputs.VERSION }}
+      version: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
 
   build-seed:
     needs: build-base
     uses: ./.github/workflows/build-seed.yml
     with:
-      version: ${{ github.event.inputs.VERSION }}
+      version: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
