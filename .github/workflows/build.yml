@@ -7,9 +7,7 @@ on:
         description: "1Panel version"
         required: true
         default: "1.27.1.2-5-1-focal"
-        type: choice
-        options:
-          - "1.27.1.2-5-1-focal"
+        type: string
 
 jobs:
   build:
