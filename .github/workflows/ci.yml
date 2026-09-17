@@ -108,6 +108,25 @@ jobs:
       - name: Checkout current repository
         uses: actions/checkout@v7
 
+      - name: Checkout Appstore
+        uses: actions/checkout@v7
+        with:
+          repository: 1Panel-dev/appstore
+          path: appstore
+          sparse-checkout: |
+            apps/openresty/${{ env.VERSION }}
+
+      - name: Copy seed build context
+        run: |
+          SRC="appstore/apps/openresty/${{ env.VERSION }}"
+          DST="./${{ env.VERSION }}"
+          cp -r "${SRC}/build/tmp" "${DST}/tmp"
+          cp "${SRC}/build/nginx.conf" "${DST}/nginx.conf"
+          cp "${SRC}/build/nginx.vh.default.conf" "${DST}/nginx.vh.default.conf"
+          cp -r "${SRC}/1pwaf" "${DST}/1pwaf"
+          cp 1pwaf/*.lua "${DST}/1pwaf/"
+          ls -la "${DST}/" "${DST}/1pwaf/"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
@@ -136,7 +155,6 @@ jobs:
             ghcr.io/weyc/openresty:${{ env.VERSION }}
           build-args: |
             RESTY_J=4
-            PANEL_OPENRESTY_VERSION=${{ env.VERSION }}
           cache-from: type=gha,scope=seed-${{ env.VERSION }}
           cache-to: type=gha,scope=seed-${{ env.VERSION }},mode=max
 

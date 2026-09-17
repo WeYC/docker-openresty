@@ -1,11 +1,9 @@
 # Dockerfile - Ubuntu Focal
 # https://github.com/openresty/docker-openresty
+# Modified: self-contained armhf build (brotli + 1pwaf baked in, no panel-openresty stage)
 
 ARG RESTY_IMAGE_BASE="ubuntu"
 ARG RESTY_IMAGE_TAG="focal"
-
-ARG PANEL_OPENRESTY_VERSION
-FROM 1panel/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
 
 FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
@@ -119,8 +117,6 @@ RUN if [ -n "${CONTAINER_PACKAGE_URL}" ]; then \
       sed -i "s|http://archive.ubuntu.com/ubuntu/|${CONTAINER_PACKAGE_URL}|g" /etc/apt/sources.list \
       && sed -i "s|http://security.ubuntu.com/ubuntu/|${CONTAINER_PACKAGE_URL}|g" /etc/apt/sources.list; \
     fi
-    
-COPY --from=panel-openresty /usr/local/openresty/modules/ngx_brotli /usr/local/openresty/modules/ngx_brotli
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -140,6 +136,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         wget \
         zlib1g-dev \
         git \
+        cmake \
         ${RESTY_ADD_PACKAGE_BUILDDEPS} \
         ${RESTY_ADD_PACKAGE_RUNDEPS} \
     && cd /tmp \
@@ -170,18 +167,36 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && CFLAGS="-g -O3" make -j${RESTY_J} \
     && CFLAGS="-g -O3" make -j${RESTY_J} install \
     && cd /tmp \
+    && git clone --recursive https://github.com/google/ngx_brotli.git \
+    && cd ngx_brotli \
+    && git checkout master \
+    && git submodule update --init --recursive \
+    && cd deps/brotli \
+    && mkdir -p out && cd out \
+    && cmake -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        .. \
+    && cmake --build . --config Release -j${RESTY_J} \
+    && cmake --build . --target install \
+    && ldconfig \
+    && cd /tmp \
 #    && curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
     && if [ ! -d openresty-${RESTY_VERSION} ]; then tar xzf openresty-${RESTY_VERSION}.tar.gz; fi \
     && cd /tmp/openresty-${RESTY_VERSION} \
     && if [ -n "${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}); fi \
     && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
+        --add-dynamic-module=/tmp/ngx_brotli \
     && make -j${RESTY_J} \
     && make -j${RESTY_J} install \
+    && mkdir -p /usr/local/openresty/modules/ngx_brotli \
+    && cp /tmp/openresty-${RESTY_VERSION}/build/nginx-*/objs/ngx_http_brotli_*.so /usr/local/openresty/modules/ngx_brotli/ \
     && cd /tmp \
     && rm -rf \
         openssl-${RESTY_OPENSSL_VERSION}.tar.gz openssl-${RESTY_OPENSSL_VERSION} \
         pcre2-${RESTY_PCRE_VERSION}.tar.gz pcre2-${RESTY_PCRE_VERSION} \
         openresty-${RESTY_VERSION}.tar.gz openresty-${RESTY_VERSION} \
+        ngx_brotli \
     && tar xzf luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
     && cd luarocks-${RESTY_LUAROCKS_VERSION} \
     && ./configure \
@@ -197,7 +212,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get autoremove -y \
     && mkdir -p /var/run/openresty \
     && ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \
-    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log 
+    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log
 
 # Add additional binaries into PATH for convenience
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
@@ -217,11 +232,7 @@ COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
 
 RUN bash /tmp/default.sh
 
-COPY --from=panel-openresty /usr/local/openresty/1pwaf /usr/local/openresty/1pwaf
-COPY --from=panel-openresty /usr/local/openresty/1pwaf/libraries/libmaxminddb.so /usr/local/openresty/1pwaf/libraries/libmaxminddb.so
-COPY --from=panel-openresty /usr/local/openresty/1pwaf/libraries/libinjection.so /usr/local/openresty/1pwaf/libraries/libinjection.so
-COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so
-COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lfs.so  /usr/local/openresty/luajit/lib/lua/5.1/lfs.so
+COPY 1pwaf /usr/local/openresty/1pwaf
 
 COPY Dockerfile.modules module.catalog.json 1panel-seed.sh /opt/1panel-seed/
 RUN chmod +x /opt/1panel-seed/1panel-seed.sh
