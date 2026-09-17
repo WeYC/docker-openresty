@@ -20,6 +20,9 @@ on:
 jobs:
   build-base:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
     steps:
       - name: Setup environment variables
         env:
@@ -36,7 +39,7 @@ jobs:
           ref: ${{ env.OPENRESTY_VERSION }}
           path: upstream
 
-      - name: Checkout 1Panel-dev Appstore
+      - name: Checkout Appstore
         uses: actions/checkout@v7
         with:
           repository: 1Panel-dev/appstore
@@ -66,7 +69,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push base image
+      - name: Build and push
         uses: docker/build-push-action@v7
         with:
           context: upstream
@@ -74,13 +77,16 @@ jobs:
           platforms: linux/arm/v7
           push: true
           tags: |
-            ghcr.io/weycovo/openresty:${{ env.VERSION }}
+            ghcr.io/weyc/openresty:${{ env.VERSION }}
           cache-from: type=gha,scope=base-${{ env.VERSION }}
           cache-to: type=gha,scope=base-${{ env.VERSION }},mode=max
 
   build-seed:
     needs: build-base
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
     steps:
       - name: Setup environment variables
         env:
@@ -106,7 +112,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push seed image
+      - name: Build and push
         uses: docker/build-push-action@v7
         with:
           context: ./${{ env.VERSION }}
@@ -114,7 +120,7 @@ jobs:
           platforms: linux/arm/v7
           push: true
           tags: |
-            ghcr.io/weycovo/openresty:${{ env.VERSION }}
+            ghcr.io/weyc/openresty:${{ env.VERSION }}
           build-args: |
             PANEL_OPENRESTY_VERSION=${{ env.OPENRESTY_VERSION }}
           cache-from: type=gha,scope=seed-${{ env.VERSION }}
