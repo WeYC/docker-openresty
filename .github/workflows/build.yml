@@ -30,6 +30,7 @@ jobs:
         with:
           repository: openresty/docker-openresty
           ref: ${{ env.OPENRESTY_VERSION }}
+          paths: "openresty/docker-openresty"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -47,7 +48,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
+          file: ./docker-openresty/Dockerfile
           platforms: linux/arm/v7
           push: true
           build-args: |
