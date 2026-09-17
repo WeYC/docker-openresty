@@ -60,7 +60,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: upstream
-          file: upstream/archive/Dockerfile.focal
+          file: upstream/focal/Dockerfile
           platforms: linux/arm/v7
           push: true
           build-args: |
