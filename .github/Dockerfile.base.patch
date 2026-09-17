@@ -1,6 +1,6 @@
 --- a/focal/Dockerfile
 +++ b/focal/Dockerfile
-@@ -218,7 +218,51 @@
+@@ -218,5 +218,47 @@
  CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
 
 +# ---- 1Panel extras for armhf (consumed by seed stage via COPY --from) ----
