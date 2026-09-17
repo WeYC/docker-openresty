@@ -1,0 +1,66 @@
+name: Build Base Image
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse version
+        id: parse
+        run: |
+          VERSION="${{ inputs.version }}"
+          IFS='-' read -r RESTY_VERSION DOCKER_BUILD PANEL_BUILD DISTRO <<< "${VERSION}"
+          echo "RESTY_VERSION=${RESTY_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Clone openresty/docker-openresty
+        uses: actions/checkout@v4
+        with:
+          repository: openresty/docker-openresty
+          ref: ${{ steps.parse.outputs.RESTY_VERSION }}
+          path: upstream
+
+      - name: Clone appstore and copy dependencies
+        run: |
+          VERSION="${{ inputs.version }}"
+          git clone --depth 1 https://github.com/1Panel-dev/appstore.git appstore
+          BUILD_DIR="appstore/apps/openresty/${VERSION}/build"
+
+          [ -d "${BUILD_DIR}/1pwaf" ] && cp -r "${BUILD_DIR}/1pwaf" upstream/
+          [ -d "${BUILD_DIR}/libraries" ] && cp -r "${BUILD_DIR}/libraries" upstream/
+          [ -d "${BUILD_DIR}/luajit" ] && cp -r "${BUILD_DIR}/luajit" upstream/
+
+          echo "Upstream dir:"
+          ls -la upstream/
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push base image
+        uses: docker/build-push-action@v6
+        with:
+          context: upstream
+          file: upstream/archive/Dockerfile.focal
+          platforms: linux/arm/v7
+          push: true
+          build-args: |
+            RESTY_VERSION=${{ steps.parse.outputs.RESTY_VERSION }}
+          tags: |
+            weycovo/openresty:${{ steps.parse.outputs.RESTY_VERSION }}
+          cache-from: type=gha,scope=base-${{ steps.parse.outputs.RESTY_VERSION }}
+          cache-to: type=gha,scope=base-${{ steps.parse.outputs.RESTY_VERSION }},mode=max

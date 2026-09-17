@@ -1,9 +1,11 @@
 # Dockerfile - Ubuntu Focal
-# Based on: https://github.com/openresty/docker-openresty (archive/Dockerfile.focal)
-# Modified: added ngx_brotli module for 1Panel compatibility
+# https://github.com/openresty/docker-openresty
 
 ARG RESTY_IMAGE_BASE="ubuntu"
 ARG RESTY_IMAGE_TAG="focal"
+
+ARG PANEL_OPENRESTY_VERSION
+FROM weycovo/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
 
 FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
@@ -16,9 +18,10 @@ ARG RESTY_VERSION="1.27.1.2"
 ARG RESTY_LUAROCKS_VERSION="3.12.2"
 
 # https://github.com/openresty/openresty-packaging/blob/master/deb/openresty-openssl3/debian/rules
-ARG RESTY_OPENSSL_VERSION="3.5.5"
-ARG RESTY_OPENSSL_PATCH_VERSION="3.5.5"
+ARG RESTY_OPENSSL_VERSION="3.4.1"
+ARG RESTY_OPENSSL_PATCH_VERSION="3.4.1"
 ARG RESTY_OPENSSL_URL_BASE="https://github.com/openssl/openssl/releases/download/openssl-${RESTY_OPENSSL_VERSION}"
+# LEGACY:  "https://www.openssl.org/source/old/1.1.1"
 ARG RESTY_OPENSSL_BUILD_OPTIONS="enable-camellia enable-seed enable-rfc3779 enable-cms enable-md2 enable-rc5 \
         enable-weak-ssl-ciphers enable-ssl3 enable-ssl3-method enable-md2 enable-ktls enable-fips \
         "
@@ -33,7 +36,6 @@ ARG RESTY_PCRE_BUILD_OPTIONS="--enable-jit --enable-pcre2grep-jit --disable-bsr-
     "
 
 ARG RESTY_J="1"
-ARG NGX_BROTLI_VERSION="master"
 
 # https://github.com/openresty/openresty-packaging/blob/master/deb/openresty/debian/rules
 ARG RESTY_CONFIG_OPTIONS="\
@@ -81,7 +83,6 @@ ARG RESTY_ADD_PACKAGE_BUILDDEPS=""
 ARG RESTY_ADD_PACKAGE_RUNDEPS=""
 ARG RESTY_EVAL_PRE_CONFIGURE=""
 ARG RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE=""
-ARG RESTY_EVAL_PRE_MAKE=""
 ARG RESTY_EVAL_POST_MAKE=""
 
 # These are not intended to be user-specified
@@ -108,11 +109,18 @@ LABEL resty_add_package_builddeps="${RESTY_ADD_PACKAGE_BUILDDEPS}"
 LABEL resty_add_package_rundeps="${RESTY_ADD_PACKAGE_RUNDEPS}"
 LABEL resty_eval_pre_configure="${RESTY_EVAL_PRE_CONFIGURE}"
 LABEL resty_eval_post_download_pre_configure="${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}"
-LABEL resty_eval_pre_make="${RESTY_EVAL_PRE_MAKE}"
 LABEL resty_eval_post_make="${RESTY_EVAL_POST_MAKE}"
 LABEL resty_luajit_options="${RESTY_LUAJIT_OPTIONS}"
 LABEL resty_pcre_options="${RESTY_PCRE_OPTIONS}"
 
+COPY tmp /tmp
+ARG CONTAINER_PACKAGE_URL
+RUN if [ -n "${CONTAINER_PACKAGE_URL}" ]; then \
+      sed -i "s|http://archive.ubuntu.com/ubuntu/|${CONTAINER_PACKAGE_URL}|g" /etc/apt/sources.list \
+      && sed -i "s|http://security.ubuntu.com/ubuntu/|${CONTAINER_PACKAGE_URL}|g" /etc/apt/sources.list; \
+    fi
+    
+COPY --from=panel-openresty /usr/local/openresty/modules/ngx_brotli /usr/local/openresty/modules/ngx_brotli
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -132,27 +140,16 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         wget \
         zlib1g-dev \
         git \
-        cmake \
         ${RESTY_ADD_PACKAGE_BUILDDEPS} \
         ${RESTY_ADD_PACKAGE_RUNDEPS} \
     && cd /tmp \
+    && bash /tmp/pre.sh \
     && if [ -n "${RESTY_EVAL_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_PRE_CONFIGURE}); fi \
-    && curl -fSL "${RESTY_OPENSSL_URL_BASE}/openssl-${RESTY_OPENSSL_VERSION}.tar.gz" -o openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
+#    && curl -fSL "${RESTY_OPENSSL_URL_BASE}/openssl-${RESTY_OPENSSL_VERSION}.tar.gz" -o openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
     && tar xzf openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
     && cd openssl-${RESTY_OPENSSL_VERSION} \
-    && if [ $(echo ${RESTY_OPENSSL_VERSION} | cut -c 1-2) = "3." ] ; then \
-        echo 'patching OpenSSL 3.x for OpenResty' \
-        && curl -s https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-${RESTY_OPENSSL_PATCH_VERSION}-sess_set_get_cb_yield.patch | patch -p1 ; \
-    fi \
-    && if [ $(echo ${RESTY_OPENSSL_VERSION} | cut -c 1-5) = "1.1.1" ] ; then \
-        echo 'patching OpenSSL 1.1.1 for OpenResty' \
-        && curl -s https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-${RESTY_OPENSSL_PATCH_VERSION}-sess_set_get_cb_yield.patch | patch -p1 ; \
-    fi \
-    && if [ $(echo ${RESTY_OPENSSL_VERSION} | cut -c 1-5) = "1.1.0" ] ; then \
-        echo 'patching OpenSSL 1.1.0 for OpenResty' \
-        && curl -s https://raw.githubusercontent.com/openresty/openresty/ed328977028c3ec3033bc25873ee360056e247cd/patches/openssl-1.1.0j-parallel_build_fix.patch | patch -p1 \
-        && curl -s https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-${RESTY_OPENSSL_PATCH_VERSION}-sess_set_get_cb_yield.patch | patch -p1 ; \
-    fi \
+    && echo 'patching OpenSSL 3.x for OpenResty' \
+    && patch -p1 < /tmp/openssl-${RESTY_OPENSSL_PATCH_VERSION}-sess_set_get_cb_yield.patch \
     && ./config \
       shared zlib -g \
       --prefix=/usr/local/openresty/openssl3 \
@@ -162,7 +159,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && make -j${RESTY_J} \
     && make -j${RESTY_J} install_sw \
     && cd /tmp \
-    && curl -fSL "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${RESTY_PCRE_VERSION}/pcre2-${RESTY_PCRE_VERSION}.tar.gz" -o pcre2-${RESTY_PCRE_VERSION}.tar.gz \
+#    && curl -fSL "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${RESTY_PCRE_VERSION}/pcre2-${RESTY_PCRE_VERSION}.tar.gz" -o pcre2-${RESTY_PCRE_VERSION}.tar.gz \
     && echo "${RESTY_PCRE_SHA256}  pcre2-${RESTY_PCRE_VERSION}.tar.gz" | shasum -a 256 --check \
     && tar xzf pcre2-${RESTY_PCRE_VERSION}.tar.gz \
     && cd /tmp/pcre2-${RESTY_PCRE_VERSION} \
@@ -173,27 +170,11 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && CFLAGS="-g -O3" make -j${RESTY_J} \
     && CFLAGS="-g -O3" make -j${RESTY_J} install \
     && cd /tmp \
-    && git clone --recursive https://github.com/google/ngx_brotli.git \
-    && cd ngx_brotli \
-    && git checkout ${NGX_BROTLI_VERSION} \
-    && git submodule update --init --recursive \
-    && cd deps/brotli \
-    && mkdir -p out && cd out \
-    && cmake -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=ON \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        .. \
-    && cmake --build . --config Release -j${RESTY_J} \
-    && cmake --build . --target install \
-    && ldconfig \
-    && cd /tmp \
-    && curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
-    && tar xzf openresty-${RESTY_VERSION}.tar.gz \
+#    && curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
+    && if [ ! -d openresty-${RESTY_VERSION} ]; then tar xzf openresty-${RESTY_VERSION}.tar.gz; fi \
     && cd /tmp/openresty-${RESTY_VERSION} \
     && if [ -n "${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}); fi \
     && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
-        --add-dynamic-module=/tmp/ngx_brotli \
-    && if [ -n "${RESTY_EVAL_PRE_MAKE}" ]; then eval $(echo ${RESTY_EVAL_PRE_MAKE}); fi \
     && make -j${RESTY_J} \
     && make -j${RESTY_J} install \
     && cd /tmp \
@@ -201,8 +182,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         openssl-${RESTY_OPENSSL_VERSION}.tar.gz openssl-${RESTY_OPENSSL_VERSION} \
         pcre2-${RESTY_PCRE_VERSION}.tar.gz pcre2-${RESTY_PCRE_VERSION} \
         openresty-${RESTY_VERSION}.tar.gz openresty-${RESTY_VERSION} \
-        ngx_brotli \
-    && curl -fSL https://luarocks.github.io/luarocks/releases/luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz -o luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
     && tar xzf luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
     && cd luarocks-${RESTY_LUAROCKS_VERSION} \
     && ./configure \
@@ -218,22 +197,34 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get autoremove -y \
     && mkdir -p /var/run/openresty \
     && ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \
-    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log
+    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log 
 
 # Add additional binaries into PATH for convenience
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
 
 # Add LuaRocks paths
+# If OpenResty changes, these may need updating:
+#    /usr/local/openresty/bin/resty -e 'print(package.path)'
+#    /usr/local/openresty/bin/resty -e 'print(package.cpath)'
 ENV LUA_PATH="/usr/local/openresty/site/lualib/?.ljbc;/usr/local/openresty/site/lualib/?/init.ljbc;/usr/local/openresty/lualib/?.ljbc;/usr/local/openresty/lualib/?/init.ljbc;/usr/local/openresty/site/lualib/?.lua;/usr/local/openresty/site/lualib/?/init.lua;/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/?/init.lua;./?.lua;/usr/local/openresty/luajit/share/luajit-2.1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua;/usr/local/openresty/luajit/share/lua/5.1/?.lua;/usr/local/openresty/luajit/share/lua/5.1/?/init.lua"
 
 ENV LUA_CPATH="/usr/local/openresty/site/lualib/?.so;/usr/local/openresty/lualib/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/openresty/luajit/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so;/usr/local/openresty/luajit/lib/lua/5.1/?.so"
 
-# Copy 1Panel nginx configuration
+
+# Copy nginx configuration files
 COPY nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
-COPY default /usr/local/openresty/nginx/conf/default
-COPY 1pwaf /usr/local/openresty/1pwaf
+COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
+
+RUN bash /tmp/default.sh
+
+COPY --from=panel-openresty /usr/local/openresty/1pwaf /usr/local/openresty/1pwaf
+COPY --from=panel-openresty /usr/local/openresty/1pwaf/libraries/libmaxminddb.so /usr/local/openresty/1pwaf/libraries/libmaxminddb.so
+COPY --from=panel-openresty /usr/local/openresty/1pwaf/libraries/libinjection.so /usr/local/openresty/1pwaf/libraries/libinjection.so
+COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so
+COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lfs.so  /usr/local/openresty/luajit/lib/lua/5.1/lfs.so
 
 CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
 
 # Use SIGQUIT instead of default SIGTERM to cleanly drain requests
+# See https://github.com/openresty/docker-openresty/blob/master/README.md#tips--pitfalls
 STOPSIGNAL SIGQUIT
