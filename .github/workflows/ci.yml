@@ -19,7 +19,7 @@ on:
 
 jobs:
   build-base:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       packages: write
       contents: read
@@ -69,21 +69,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build base image
         uses: docker/build-push-action@v7
         with:
           context: upstream
           file: upstream/focal/Dockerfile
           platforms: linux/arm/v7
-          push: true
+          push: false
+          load: true
           tags: |
             ghcr.io/weyc/openresty:${{ env.VERSION }}
+          build-args: |
+            RESTY_J=4
           cache-from: type=gha,scope=base-${{ env.VERSION }}
           cache-to: type=gha,scope=base-${{ env.VERSION }},mode=max
 
+      - name: Push base image
+        run: docker push ghcr.io/weyc/openresty:${{ env.VERSION }}
+
   build-seed:
     needs: build-base
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       packages: write
       contents: read
@@ -112,16 +118,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build seed image
         uses: docker/build-push-action@v7
         with:
           context: ./${{ env.VERSION }}
           file: ./${{ env.VERSION }}/Dockerfile
           platforms: linux/arm/v7
-          push: true
+          push: false
+          load: true
           tags: |
             ghcr.io/weyc/openresty:${{ env.VERSION }}
           build-args: |
+            RESTY_J=4
             PANEL_OPENRESTY_VERSION=${{ env.OPENRESTY_VERSION }}
           cache-from: type=gha,scope=seed-${{ env.VERSION }}
           cache-to: type=gha,scope=seed-${{ env.VERSION }},mode=max
+
+      - name: Push seed image
+        run: docker push ghcr.io/weyc/openresty:${{ env.VERSION }}
