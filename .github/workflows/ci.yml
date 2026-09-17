@@ -22,8 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup environment variables
+        env:
+          VERSION: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
         run: |
-          OPENRESTY_VERSION=$(echo "${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}" | cut -d'-' -f1,2)
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          OPENRESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1,2)
           echo "OPENRESTY_VERSION=${OPENRESTY_VERSION}" >> "$GITHUB_ENV"
 
       - name: Checkout openresty/docker-openresty
@@ -39,11 +42,11 @@ jobs:
           repository: 1Panel-dev/appstore
           path: appstore
           sparse-checkout: |
-            apps/openresty/${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
+            apps/openresty/${{ env.VERSION }}
 
       - name: Copy dependencies to upstream
         run: |
-          SRC="appstore/apps/openresty/${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}"
+          SRC="appstore/apps/openresty/${{ env.VERSION }}"
           [ -d "${SRC}/1pwaf" ] && cp -r "${SRC}/1pwaf" upstream/
           [ -d "${SRC}/build/tmp" ] && cp -r "${SRC}/build/tmp" upstream/
           [ -d "${SRC}/build/nginx.conf" ] && cp "${SRC}/build/nginx.conf" upstream/
@@ -71,17 +74,20 @@ jobs:
           platforms: linux/arm/v7
           push: true
           tags: |
-            weycovo/openresty:${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
-          cache-from: type=gha,scope=base-${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
-          cache-to: type=gha,scope=base-${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }},mode=max
+            weycovo/openresty:${{ env.VERSION }}
+          cache-from: type=gha,scope=base-${{ env.VERSION }}
+          cache-to: type=gha,scope=base-${{ env.VERSION }},mode=max
 
   build-seed:
     needs: build-base
     runs-on: ubuntu-latest
     steps:
       - name: Setup environment variables
+        env:
+          VERSION: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
         run: |
-          OPENRESTY_VERSION=$(echo "${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}" | cut -d'-' -f1,2)
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          OPENRESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1,2)
           echo "OPENRESTY_VERSION=${OPENRESTY_VERSION}" >> "$GITHUB_ENV"
 
       - name: Checkout current repository
@@ -103,13 +109,13 @@ jobs:
       - name: Build and push seed image
         uses: docker/build-push-action@v7
         with:
-          context: ./${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
-          file: ./${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}/Dockerfile
+          context: ./${{ env.VERSION }}
+          file: ./${{ env.VERSION }}/Dockerfile
           platforms: linux/arm/v7
           push: true
           tags: |
-            weycovo/openresty:${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
+            weycovo/openresty:${{ env.VERSION }}
           build-args: |
             PANEL_OPENRESTY_VERSION=${{ env.OPENRESTY_VERSION }}
-          cache-from: type=gha,scope=seed-${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
-          cache-to: type=gha,scope=seed-${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }},mode=max
+          cache-from: type=gha,scope=seed-${{ env.VERSION }}
+          cache-to: type=gha,scope=seed-${{ env.VERSION }},mode=max
