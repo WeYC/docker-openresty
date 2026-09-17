@@ -130,7 +130,7 @@ jobs:
             ghcr.io/weyc/openresty:${{ env.VERSION }}
           build-args: |
             RESTY_J=4
-            PANEL_OPENRESTY_VERSION=${{ env.OPENRESTY_VERSION }}
+            PANEL_OPENRESTY_VERSION=${{ env.VERSION }}
           cache-from: type=gha,scope=seed-${{ env.VERSION }}
           cache-to: type=gha,scope=seed-${{ env.VERSION }},mode=max
 

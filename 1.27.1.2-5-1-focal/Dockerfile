@@ -5,7 +5,8 @@ ARG RESTY_IMAGE_BASE="ubuntu"
 ARG RESTY_IMAGE_TAG="focal"
 
 ARG PANEL_OPENRESTY_VERSION
-FROM weyc/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
+# FROM weyc/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
+FROM ghcr.io/weyc/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
 
 FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
