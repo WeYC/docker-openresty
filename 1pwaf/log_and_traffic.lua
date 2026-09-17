@@ -1,2 +1,0 @@
--- Stub log_and_traffic.lua for 1pwaf compatibility
--- This is a fake/stub file to prevent nginx startup errors

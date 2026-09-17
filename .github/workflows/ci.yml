@@ -32,9 +32,6 @@ jobs:
           OPENRESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1,2)
           echo "OPENRESTY_VERSION=${OPENRESTY_VERSION}" >> "$GITHUB_ENV"
 
-      - name: Checkout current repository
-        uses: actions/checkout@v7
-
       - name: Checkout openresty/docker-openresty
         uses: actions/checkout@v7
         with:
@@ -57,13 +54,7 @@ jobs:
           [ -d "${SRC}/build/tmp" ] && cp -r "${SRC}/build/tmp" upstream/
           [ -d "${SRC}/build/nginx.conf" ] && cp "${SRC}/build/nginx.conf" upstream/
           [ -d "${SRC}/build/nginx.vh.default.conf" ] && cp "${SRC}/build/nginx.vh.default.conf" upstream/
-          cp 1pwaf/*.lua upstream/1pwaf/
-          ls -la upstream/ upstream/1pwaf/
-
-      - name: Patch base Dockerfile
-        run: |
-          patch -p1 -d upstream < .github/Dockerfile.base.patch
-          grep -n "1Panel extras" upstream/focal/Dockerfile
+          ls -la upstream/
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
