@@ -30,7 +30,7 @@ jobs:
         with:
           repository: openresty/docker-openresty
           ref: ${{ env.OPENRESTY_VERSION }}
-          path: "docker-openresty/focal"
+          path: "docker-openresty"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
