@@ -16,13 +16,15 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           IFS='-' read -r RESTY_VERSION DOCKER_BUILD PANEL_BUILD DISTRO <<< "${VERSION}"
+          UPSTREAM_REF="${RESTY_VERSION}-${DOCKER_BUILD}"
           echo "RESTY_VERSION=${RESTY_VERSION}" >> $GITHUB_OUTPUT
+          echo "UPSTREAM_REF=${UPSTREAM_REF}" >> $GITHUB_OUTPUT
 
       - name: Checkout openresty/docker-openresty
         uses: actions/checkout@v7
         with:
           repository: openresty/docker-openresty
-          ref: ${{ steps.parse.outputs.RESTY_VERSION }}
+          ref: ${{ steps.parse.outputs.UPSTREAM_REF }}
           path: upstream
 
       - name: Checkout 1Panel-dev Appstore
