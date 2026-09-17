@@ -11,20 +11,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Parse version
-        id: parse
+      - name: Setup environment variables
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
-          VERSION="${{ inputs.version }}"
-          IFS='-' read -r RESTY_VERSION DOCKER_BUILD PANEL_BUILD DISTRO <<< "${VERSION}"
-          UPSTREAM_REF="${RESTY_VERSION}-${DOCKER_BUILD}"
-          echo "RESTY_VERSION=${RESTY_VERSION}" >> $GITHUB_OUTPUT
-          echo "UPSTREAM_REF=${UPSTREAM_REF}" >> $GITHUB_OUTPUT
+          OPENRESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1,2)
+          echo "OPENRESTY_VERSION=${OPENRESTY_VERSION}" >> "$GITHUB_ENV"
 
       - name: Checkout openresty/docker-openresty
         uses: actions/checkout@v7
         with:
           repository: openresty/docker-openresty
-          ref: ${{ steps.parse.outputs.UPSTREAM_REF }}
+          ref: ${{ env.OPENRESTY_VERSION }}
           path: upstream
 
       - name: Checkout 1Panel-dev Appstore
@@ -32,16 +30,18 @@ jobs:
         with:
           repository: 1Panel-dev/appstore
           path: appstore
+          sparse-checkout: |
+            apps/openresty/${{ env.VERSION }}
 
-      - name: Copy dependencies to upstream
-        run: |
-          VERSION="${{ inputs.version }}"
-          BUILD_DIR="appstore/apps/openresty/${VERSION}/build"
-          [ -d "${BUILD_DIR}/1pwaf" ] && cp -r "${BUILD_DIR}/1pwaf" upstream/
-          [ -d "${BUILD_DIR}/libraries" ] && cp -r "${BUILD_DIR}/libraries" upstream/
-          [ -d "${BUILD_DIR}/luajit" ] && cp -r "${BUILD_DIR}/luajit" upstream/
-          echo "Upstream dir:"
-          ls -la upstream/
+      # - name: Copy dependencies to upstream
+      #   run: |
+      #     VERSION="${{ inputs.version }}"
+      #     BUILD_DIR="appstore/apps/openresty/${VERSION}/build"
+      #     [ -d "${BUILD_DIR}/1pwaf" ] && cp -r "${BUILD_DIR}/1pwaf" upstream/
+      #     [ -d "${BUILD_DIR}/libraries" ] && cp -r "${BUILD_DIR}/libraries" upstream/
+      #     [ -d "${BUILD_DIR}/luajit" ] && cp -r "${BUILD_DIR}/luajit" upstream/
+      #     echo "Upstream dir:"
+      #     ls -la upstream/
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -56,16 +56,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push base image
+      - name: Build and push
         uses: docker/build-push-action@v7
         with:
           context: upstream
           file: upstream/focal/Dockerfile
           platforms: linux/arm/v7
           push: true
-          build-args: |
-            RESTY_VERSION=${{ steps.parse.outputs.RESTY_VERSION }}
           tags: |
-            weycovo/openresty:${{ steps.parse.outputs.RESTY_VERSION }}
-          cache-from: type=gha,scope=base-${{ steps.parse.outputs.RESTY_VERSION }}
-          cache-to: type=gha,scope=base-${{ steps.parse.outputs.RESTY_VERSION }},mode=max
+            weycovo/openresty:${{ env.VERSION }}
+          cache-from: type=gha,scope=base-${{ env.VERSION }}
+          cache-to: type=gha,scope=base-${{ env.VERSION }},mode=max

@@ -11,22 +11,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Parse version
-        id: parse
-        run: |
-          VERSION="${{ inputs.version }}"
-          IFS='-' read -r RESTY_VERSION DOCKER_BUILD PANEL_BUILD DISTRO <<< "${VERSION}"
-          echo "RESTY_VERSION=${RESTY_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Checkout 1Panel-dev Appstore
-        uses: actions/checkout@v7
-        with:
-          repository: 1Panel-dev/appstore
-          path: appstore
-
+        
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
@@ -40,16 +28,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push seed image
+      - name: Build and push
         uses: docker/build-push-action@v7
         with:
-          context: ./appstore/apps/openresty/${{ inputs.version }}/build
-          file: ./appstore/apps/openresty/${{ inputs.version }}/build/Dockerfile
+          context: ./${{ inputs.version }}
+          file: ./${{ inputs.version }}/Dockerfile
           platforms: linux/arm/v7
           push: true
           tags: |
             weycovo/openresty:${{ inputs.version }}
           build-args: |
-            PANEL_OPENRESTY_VERSION=${{ steps.parse.outputs.RESTY_VERSION }}
-          cache-from: type=gha,scope=seed-${{ inputs.version }}
-          cache-to: type=gha,scope=seed-${{ inputs.version }},mode=max
+            PANEL_OPENRESTY_VERSION=${{ steps.parse.outputs.inputs.version }}
+          cache-from: type=gha,scope=seed-${{ env.inputs.version }}
+          cache-to: type=gha,scope=seed-${{ env.inputs.version }},mode=max

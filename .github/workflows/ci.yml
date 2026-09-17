@@ -5,28 +5,28 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/ci.yml'
-      - '.github/workflows/build-base.yml'
-      - '.github/workflows/build-seed.yml'
-      - '1.*/Dockerfile'
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/build-base.yml"
+      - ".github/workflows/build-seed.yml"
+      - "1.*/Dockerfile"
   workflow_dispatch:
     inputs:
       VERSION:
-        description: '1Panel version'
+        description: "1Panel version"
         required: true
-        default: '1.27.1.2-5-1-focal'
+        default: "1.27.1.2-5-1-focal"
         type: choice
         options:
-          - '1.27.1.2-5-1-focal'
+          - "1.27.1.2-5-1-focal"
 
 jobs:
   build-base:
     uses: ./.github/workflows/build-base.yml
     with:
-      version: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
+      version: ${{ github.event.inputs.VERSION }}
 
   build-seed:
     needs: build-base
     uses: ./.github/workflows/build-seed.yml
     with:
-      version: ${{ github.event.inputs.VERSION || '1.27.1.2-5-1-focal' }}
+      version: ${{ github.event.inputs.VERSION }}
