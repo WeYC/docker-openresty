@@ -33,15 +33,15 @@ jobs:
           sparse-checkout: |
             apps/openresty/${{ env.VERSION }}
 
-      # - name: Copy dependencies to upstream
-      #   run: |
-      #     VERSION="${{ inputs.version }}"
-      #     BUILD_DIR="appstore/apps/openresty/${VERSION}/build"
-      #     [ -d "${BUILD_DIR}/1pwaf" ] && cp -r "${BUILD_DIR}/1pwaf" upstream/
-      #     [ -d "${BUILD_DIR}/libraries" ] && cp -r "${BUILD_DIR}/libraries" upstream/
-      #     [ -d "${BUILD_DIR}/luajit" ] && cp -r "${BUILD_DIR}/luajit" upstream/
-      #     echo "Upstream dir:"
-      #     ls -la upstream/
+      - name: Copy dependencies to upstream
+        run: |
+          VERSION="${{ inputs.version }}"
+          SRC="appstore/apps/openresty/${VERSION}"
+          [ -d "${SRC}/1pwaf" ] && cp -r "${SRC}/1pwaf" upstream/
+          [ -d "${SRC}/build/tmp" ] && cp -r "${SRC}/build/tmp" upstream/
+          [ -d "${SRC}/build/nginx.conf" ] && cp "${SRC}/build/nginx.conf" upstream/
+          [ -d "${SRC}/build/nginx.vh.default.conf" ] && cp "${SRC}/build/nginx.vh.default.conf" upstream/
+          ls -la upstream/
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
