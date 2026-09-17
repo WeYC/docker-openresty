@@ -48,7 +48,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker-openresty/Dockerfile
+          file: ./docker-openresty/focal/Dockerfile
           platforms: linux/arm/v7
           push: true
           build-args: |
