@@ -15,6 +15,7 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           OPENRESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1,2)
           echo "OPENRESTY_VERSION=${OPENRESTY_VERSION}" >> "$GITHUB_ENV"
 
