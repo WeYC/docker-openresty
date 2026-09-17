@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       VERSION:
-        description: 'Version (e.g. 1.27.1.2-5-1-focal, 1.21.4.3-3-3-focal)'
+        description: "1Panel version"
         required: true
-        default: '1.27.1.2-5-1-focal'
+        default: "1.27.1.2-5-1-focal"
         type: choice
         options:
-          - '1.27.1.2-5-1-focal'
+          - "1.27.1.2-5-1-focal"
 
 jobs:
   build:
@@ -18,13 +18,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Parse version
+      - name: Setup environment variables
         id: version
         run: |
-          VERSION="${{ github.event.inputs.VERSION }}"
-          IFS='-' read -r RESTY_VERSION DOCKER_BUILD PANEL_BUILD DISTRO <<< "${VERSION}"
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "RESTY_VERSION=${RESTY_VERSION}" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          OPENRESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1,2)
+          echo "OPENRESTY_VERSION=${OPENRESTY_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Checkout openresty/docker-openresty
+        uses: actions/checkout@v7
+        with:
+          repository: openresty/docker-openresty
+          ref: ${{ env.OPENRESTY_VERSION }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
