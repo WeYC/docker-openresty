@@ -108,23 +108,6 @@ jobs:
       - name: Checkout current repository
         uses: actions/checkout@v7
 
-      - name: Checkout Appstore
-        uses: actions/checkout@v7
-        with:
-          repository: 1Panel-dev/appstore
-          path: appstore
-          sparse-checkout: |
-            apps/openresty/${{ env.VERSION }}
-
-      - name: Copy seed build context
-        run: |
-          SRC="appstore/apps/openresty/${{ env.VERSION }}/build"
-          DST="./${{ env.VERSION }}"
-          cp -r "${SRC}/tmp" "${DST}/tmp"
-          cp "${SRC}/nginx.conf" "${DST}/nginx.conf"
-          cp "${SRC}/nginx.vh.default.conf" "${DST}/nginx.vh.default.conf"
-          ls -la "${DST}/"
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
