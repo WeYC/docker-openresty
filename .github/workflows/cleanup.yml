@@ -1,0 +1,45 @@
+name: Cleanup Workflow Runs
+
+on:
+  workflow_dispatch:
+    inputs:
+      retain_days:
+        description: "保留天数（超过此天数的运行将被删除）"
+        default: "30"
+      keep_minimum_runs:
+        description: "每个工作流保留的最少运行次数"
+        default: "6"
+      delete_run_by_conclusion_pattern:
+        description: "删除的运行结论"
+        default: "failure,cancelled"
+        type: choice
+        options:
+          - "failure,cancelled"
+          - "failure"
+          - "cancelled"
+          - "failure,cancelled,action_required"
+          - "ALL"
+      dry_run:
+        description: "模拟运行（不实际删除）"
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2.1.0
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: ${{ inputs.retain_days }}
+          keep_minimum_runs: ${{ inputs.keep_minimum_runs }}
+          delete_run_by_conclusion_pattern: ${{ inputs.delete_run_by_conclusion_pattern }}
+          dry_run: ${{ inputs.dry_run }}
