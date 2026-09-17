@@ -1,1 +1,0 @@
--- Stub worker.lua for 1Panel WAF compatibility

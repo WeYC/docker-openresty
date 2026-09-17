@@ -1,2 +1,0 @@
--- Stub init.lua for 1Panel WAF compatibility
--- Placeholder: actual 1pwaf Lua code is not open source

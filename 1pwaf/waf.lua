@@ -1,1 +1,0 @@
--- Stub waf.lua for 1Panel WAF compatibility

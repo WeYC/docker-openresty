@@ -1,1 +1,0 @@
--- Stub log_and_traffic.lua for 1Panel WAF compatibility
