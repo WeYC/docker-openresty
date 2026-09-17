@@ -5,8 +5,7 @@ ARG RESTY_IMAGE_BASE="ubuntu"
 ARG RESTY_IMAGE_TAG="focal"
 
 ARG PANEL_OPENRESTY_VERSION
-# FROM weyc/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
-FROM ghcr.io/weyc/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
+FROM 1panel/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
 
 FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
@@ -223,6 +222,10 @@ COPY --from=panel-openresty /usr/local/openresty/1pwaf/libraries/libmaxminddb.so
 COPY --from=panel-openresty /usr/local/openresty/1pwaf/libraries/libinjection.so /usr/local/openresty/1pwaf/libraries/libinjection.so
 COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so
 COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lfs.so  /usr/local/openresty/luajit/lib/lua/5.1/lfs.so
+
+COPY Dockerfile.modules module.catalog.json 1panel-seed.sh /opt/1panel-seed/
+RUN chmod +x /opt/1panel-seed/1panel-seed.sh
+ENTRYPOINT ["/opt/1panel-seed/1panel-seed.sh"]
 
 CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
 
