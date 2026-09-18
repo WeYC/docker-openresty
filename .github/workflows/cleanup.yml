@@ -27,6 +27,28 @@ on:
         options:
           - "false"
           - "true"
+  workflow_call:
+    inputs:
+      retain_days:
+        description: "保留天数（超过此天数的运行将被删除）"
+        required: false
+        default: "30"
+        type: string
+      keep_minimum_runs:
+        description: "每个工作流保留的最少运行次数"
+        required: false
+        default: "6"
+        type: string
+      delete_run_by_conclusion_pattern:
+        description: "需要删除的运行记录"
+        required: false
+        default: "failure,cancelled"
+        type: string
+      dry_run:
+        description: "模拟运行（不实际删除）"
+        required: false
+        default: "false"
+        type: string
 
 jobs:
   cleanup:

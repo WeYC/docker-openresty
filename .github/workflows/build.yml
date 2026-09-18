@@ -8,6 +8,17 @@ on:
         required: true
         default: "1.27.1.2-5-1-focal"
         type: string
+  workflow_call:
+    inputs:
+      VERSION:
+        description: "1Panel version, e.g. 1.27.1.2-5-1-focal"
+        required: true
+        type: string
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
 
 jobs:
   build:

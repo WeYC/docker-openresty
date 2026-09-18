@@ -1,60 +1,43 @@
 name: CI
 
+# Orchestrator entrypoint: fan out one build per version, then cleanup.
+# Manual trigger with comma-separated versions, e.g.
+#   1.27.1.2-5-1-focal,1.31.1.1-2-4-noble
+
 on:
   workflow_dispatch:
     inputs:
-      VERSION:
-        description: "1Panel version e.g. 1.27.1.2-5-1-focal"
+      VERSIONS:
+        description: "Comma-separated 1Panel versions"
         required: true
-        default: "1.27.1.2-5-1-focal"
+        default: "1.27.1.2-5-1-focal,1.31.1.1-2-4-noble"
         type: string
 
 jobs:
-  build:
-    runs-on: ubuntu-24.04
-
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.versions.outputs.matrix }}
     steps:
-      - name: Setup environment variables
+      - id: versions
         run: |
-          VERSION="${{ inputs.VERSION }}"
-          OPENRESTY_TAG=$(echo "$VERSION" | cut -d'-' -f1,2)
-          RESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
-          DISTRO=$(echo "$VERSION" | rev | cut -d'-' -f1 | rev)
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "OPENRESTY_TAG=${OPENRESTY_TAG}" >> "$GITHUB_ENV"
-          echo "RESTY_VERSION=${RESTY_VERSION}" >> "$GITHUB_ENV"
-          echo "DISTRO=${DISTRO}" >> "$GITHUB_ENV"
+          MATRIX=$(echo "${{ inputs.VERSIONS }}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' | jq -R . | jq -s -c .)
+          if [ "${MATRIX}" = "[]" ]; then echo "No versions provided"; exit 1; fi
+          echo "matrix=${MATRIX}" >> "$GITHUB_OUTPUT"
 
-      - name: Checkout openresty/docker-openresty
-        uses: actions/checkout@v7
-        with:
-          repository: openresty/docker-openresty
-          ref: ${{ env.OPENRESTY_VERSION }}
+  build:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        VERSION: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    uses: ./.github/workflows/build.yml
+    with:
+      VERSION: ${{ matrix.VERSION }}
+    secrets: inherit
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./${{ env.DISTRO }}/Dockerfile
-          platforms: linux/arm/v7
-          push: true
-          build-args: |
-            RESTY_VERSION=${{ env.RESTY_VERSION }}
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.VERSION }}
-          cache-from: type=gha,scope=${{ env.VERSION }}
-          cache-to: type=gha,scope=${{ env.VERSION }},mode=max
-
-
+  cleanup:
+    needs: build
+    if: always()
+    uses: ./.github/workflows/cleanup.yml
+    secrets: inherit
