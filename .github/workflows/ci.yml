@@ -10,19 +10,15 @@ on:
   workflow_dispatch:
     inputs:
       VERSION:
-        description: "1Panel version"
+        description: "1Panel version e.g. 1.27.1.2-5-1-focal"
         required: true
         default: "1.27.1.2-5-1-focal"
-        type: choice
-        options:
-          - "1.27.1.2-5-1-focal"
+        type: string
 
 jobs:
   build-base:
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      packages: write
-      contents: read
+    runs-on: ubuntu-24.04
+
     steps:
       - name: Setup environment variables
         run: |
