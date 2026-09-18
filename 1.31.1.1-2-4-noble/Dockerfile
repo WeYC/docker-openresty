@@ -197,6 +197,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && make -j${RESTY_J} install \
     && mkdir -p /usr/local/openresty/modules/ngx_brotli \
     && cp /tmp/openresty-${RESTY_VERSION}/build/nginx-*/objs/ngx_http_brotli_*.so /usr/local/openresty/modules/ngx_brotli/ \
+    && cp -r /tmp/ngx_brotli/. /usr/local/openresty/modules/ngx_brotli/ \
+    && rm -rf /usr/local/openresty/modules/ngx_brotli/.git /usr/local/openresty/modules/ngx_brotli/deps/brotli/.git \
     && cd /tmp \
     && rm -rf \
         openssl-${RESTY_OPENSSL_VERSION}.tar.gz openssl-${RESTY_OPENSSL_VERSION} \
