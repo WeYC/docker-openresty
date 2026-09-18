@@ -1,7 +1,5 @@
 # Dockerfile - Ubuntu Noble
 # https://github.com/openresty/docker-openresty
-# Modified: self-contained armhf build (brotli + 1pwaf baked in, no panel-openresty stage)
-
 ARG RESTY_IMAGE_BASE="ubuntu"
 ARG RESTY_IMAGE_TAG="noble"
 

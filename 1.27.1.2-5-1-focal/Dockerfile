@@ -1,7 +1,5 @@
 # Dockerfile - Ubuntu Focal
 # https://github.com/openresty/docker-openresty
-# Modified: self-contained armhf build (brotli + 1pwaf baked in, no panel-openresty stage)
-
 ARG RESTY_IMAGE_BASE="ubuntu"
 ARG RESTY_IMAGE_TAG="focal"
 
@@ -135,8 +133,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         unzip \
         wget \
         zlib1g-dev \
-        git \
-        cmake \
         ${RESTY_ADD_PACKAGE_BUILDDEPS} \
         ${RESTY_ADD_PACKAGE_RUNDEPS} \
     && cd /tmp \
@@ -167,38 +163,18 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && CFLAGS="-g -O3" make -j${RESTY_J} \
     && CFLAGS="-g -O3" make -j${RESTY_J} install \
     && cd /tmp \
-    && _SAVED_CFLAGS="${CFLAGS}" && unset CFLAGS \
-    && git clone --recursive https://github.com/google/ngx_brotli.git \
-    && cd ngx_brotli \
-    && git checkout master \
-    && git submodule update --init --recursive \
-    && cd deps/brotli \
-    && mkdir -p out && cd out \
-    && cmake -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=ON \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        .. \
-    && cmake --build . --config Release -j${RESTY_J} \
-    && cmake --build . --target install \
-    && export CFLAGS="${_SAVED_CFLAGS}" \
-    && ldconfig \
-    && cd /tmp \
 #    && curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
     && if [ ! -d openresty-${RESTY_VERSION} ]; then tar xzf openresty-${RESTY_VERSION}.tar.gz; fi \
     && cd /tmp/openresty-${RESTY_VERSION} \
     && if [ -n "${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}); fi \
     && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
-        --add-dynamic-module=/tmp/ngx_brotli \
     && make -j${RESTY_J} \
     && make -j${RESTY_J} install \
-    && mkdir -p /usr/local/openresty/modules/ngx_brotli \
-    && cp /tmp/openresty-${RESTY_VERSION}/build/nginx-*/objs/ngx_http_brotli_*.so /usr/local/openresty/modules/ngx_brotli/ \
     && cd /tmp \
     && rm -rf \
         openssl-${RESTY_OPENSSL_VERSION}.tar.gz openssl-${RESTY_OPENSSL_VERSION} \
         pcre2-${RESTY_PCRE_VERSION}.tar.gz pcre2-${RESTY_PCRE_VERSION} \
         openresty-${RESTY_VERSION}.tar.gz openresty-${RESTY_VERSION} \
-        ngx_brotli \
     && tar xzf luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
     && cd luarocks-${RESTY_LUAROCKS_VERSION} \
     && ./configure \
