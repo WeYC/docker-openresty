@@ -21,7 +21,6 @@ jobs:
         id: version
         run: |
           VERSION="${{ inputs.VERSION }}"
-          if [ -z "$VERSION" ]; then echo "VERSION 为空，请用 workflow_dispatch 手动填写 VERSION"; exit 1; fi
           OPENRESTY_TAG=$(echo "$VERSION" | cut -d'-' -f1,2)
           RESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
           DISTRO=$(echo "$VERSION" | rev | cut -d'-' -f1 | rev)
@@ -37,13 +36,13 @@ jobs:
           ref: ${{ env.OPENRESTY_TAG }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}

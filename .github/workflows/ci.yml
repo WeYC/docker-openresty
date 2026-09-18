@@ -16,13 +16,45 @@ jobs:
     steps:
       - name: Setup environment variables
         run: |
+          VERSION="${{ inputs.VERSION }}"
+          OPENRESTY_TAG=$(echo "$VERSION" | cut -d'-' -f1,2)
+          RESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
+          DISTRO=$(echo "$VERSION" | rev | cut -d'-' -f1 | rev)
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          OPENRESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1,2)
-          echo "OPENRESTY_VERSION=${OPENRESTY_VERSION}" >> "$GITHUB_ENV"
+          echo "OPENRESTY_TAG=${OPENRESTY_TAG}" >> "$GITHUB_ENV"
+          echo "RESTY_VERSION=${RESTY_VERSION}" >> "$GITHUB_ENV"
+          echo "DISTRO=${DISTRO}" >> "$GITHUB_ENV"
 
       - name: Checkout openresty/docker-openresty
         uses: actions/checkout@v7
         with:
           repository: openresty/docker-openresty
           ref: ${{ env.OPENRESTY_VERSION }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./${{ env.DISTRO }}/Dockerfile
+          platforms: linux/arm/v7
+          push: true
+          build-args: |
+            RESTY_VERSION=${{ env.RESTY_VERSION }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.VERSION }}
+          cache-from: type=gha,scope=${{ env.VERSION }}
+          cache-to: type=gha,scope=${{ env.VERSION }},mode=max
+
 
