@@ -172,10 +172,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && CFLAGS="-g -O3" make -j${RESTY_J} install \
     && cd /tmp \
     && _SAVED_CFLAGS="${CFLAGS}" && unset CFLAGS \
-    && git clone --recursive https://github.com/google/ngx_brotli.git \
+    && git clone --depth 1 --branch master --recursive --shallow-submodules https://github.com/google/ngx_brotli.git \
     && cd ngx_brotli \
-    && git checkout master \
-    && git submodule update --init --recursive \
+    && git submodule update --init --recursive --depth 1 \
     && cd deps/brotli \
     && mkdir -p out && cd out \
     && cmake -DCMAKE_BUILD_TYPE=Release \
@@ -213,6 +212,17 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         --with-lua-include=/usr/local/openresty/luajit/include/luajit-2.1 \
     && make build \
     && make install \
+    && cd /tmp \
+    && tar -zxf libmaxminddb.tar.gz \
+    && cd libmaxminddb && ./configure && make && make install \
+    && cp -a /usr/local/lib/libmaxminddb.so* /usr/local/openresty/1pwaf/libraries/ \
+    && cd /tmp \
+    && /usr/local/openresty/luajit/bin/luarocks install lsqlite3 \
+    && /usr/local/openresty/luajit/bin/luarocks install luafilesystem \
+    && git clone --depth 1 https://github.com/client9/libinjection.git /tmp/libinjection \
+    && cd /tmp/libinjection/src \
+    && gcc -O2 -fPIC -shared -o /usr/local/openresty/1pwaf/libraries/libinjection.so $(ls *.c | grep -v -E '^(main|test)') \
+    && ldconfig \
     && cd /tmp \
     && if [ -n "${RESTY_EVAL_POST_MAKE}" ]; then eval $(echo ${RESTY_EVAL_POST_MAKE}); fi \
     && rm -rf luarocks-${RESTY_LUAROCKS_VERSION} luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
