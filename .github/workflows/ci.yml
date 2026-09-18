@@ -39,5 +39,8 @@ jobs:
   cleanup:
     needs: build
     if: always()
+    permissions:
+      actions: write
+      contents: read
     uses: ./.github/workflows/cleanup.yml
     secrets: inherit
