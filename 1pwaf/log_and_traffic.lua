@@ -1,0 +1,5 @@
+-- 1pwaf placeholder (self-contained seed image).
+-- The real WAF implementation is provided at 1Panel runtime.
+-- This stub only guarantees the file exists so nginx can start
+-- without the WAF enabled.
+-- log_by_lua_file entry point.

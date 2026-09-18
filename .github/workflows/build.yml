@@ -21,19 +21,9 @@ jobs:
         id: version
         run: |
           VERSION="${{ inputs.VERSION }}"
-          OPENRESTY_TAG=$(echo "$VERSION" | cut -d'-' -f1,2)
           RESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
-          DISTRO=$(echo "$VERSION" | rev | cut -d'-' -f1 | rev)
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "OPENRESTY_TAG=${OPENRESTY_TAG}" >> "$GITHUB_ENV"
           echo "RESTY_VERSION=${RESTY_VERSION}" >> "$GITHUB_ENV"
-          echo "DISTRO=${DISTRO}" >> "$GITHUB_ENV"
-
-      - name: Checkout openresty/docker-openresty
-        uses: actions/checkout@v7
-        with:
-          repository: openresty/docker-openresty
-          ref: ${{ env.OPENRESTY_TAG }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -51,7 +41,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./${{ env.DISTRO }}/Dockerfile
+          file: ./${{ env.VERSION }}/Dockerfile
           platforms: linux/arm/v7
           push: true
           build-args: |
