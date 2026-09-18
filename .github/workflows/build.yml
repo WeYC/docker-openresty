@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       VERSION:
-        description: "1Panel version"
+        description: "1Panel version, e.g. 1.27.1.2-5-1-focal"
         required: true
         default: "1.27.1.2-5-1-focal"
         type: string
@@ -20,16 +20,18 @@ jobs:
         id: version
         run: |
           VERSION="${{ github.event.inputs.VERSION }}"
-          OPENRESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1,2)
+          OPENRESTY_TAG=$(echo "$VERSION" | cut -d'-' -f1,2)
+          RESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
           DISTRO=$(echo "$VERSION" | rev | cut -d'-' -f1 | rev)
-          echo "OPENRESTY_VERSION=${OPENRESTY_VERSION}" >> "$GITHUB_ENV"
+          echo "OPENRESTY_TAG=${OPENRESTY_TAG}" >> "$GITHUB_ENV"
+          echo "RESTY_VERSION=${RESTY_VERSION}" >> "$GITHUB_ENV"
           echo "DISTRO=${DISTRO}" >> "$GITHUB_ENV"
 
       - name: Checkout openresty/docker-openresty
         uses: actions/checkout@v7
         with:
           repository: openresty/docker-openresty
-          ref: ${{ env.OPENRESTY_VERSION }}
+          ref: ${{ env.OPENRESTY_TAG }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -51,7 +53,7 @@ jobs:
           platforms: linux/arm/v7
           push: true
           build-args: |
-            RESTY_VERSION=${{ env.OPENRESTY_VERSION }}
+            RESTY_VERSION=${{ env.RESTY_VERSION }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ github.event.inputs.VERSION }}
           cache-from: type=gha,scope=${{ github.event.inputs.VERSION }}
