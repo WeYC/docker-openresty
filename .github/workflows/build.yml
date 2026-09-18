@@ -56,6 +56,7 @@ jobs:
           push: true
           build-args: |
             RESTY_VERSION=${{ env.RESTY_VERSION }}
+            RESTY_EVAL_PRE_CONFIGURE=export CFLAGS="-mfpu=vfpv3-d16 -mfloat-abi=hard"
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.VERSION }}
           cache-from: type=gha,scope=${{ env.VERSION }}
