@@ -11,7 +11,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,10 +20,12 @@ jobs:
       - name: Setup environment variables
         id: version
         run: |
-          VERSION="${{ github.event.inputs.VERSION }}"
+          VERSION="${{ inputs.VERSION }}"
+          if [ -z "$VERSION" ]; then echo "VERSION 为空，请用 workflow_dispatch 手动填写 VERSION"; exit 1; fi
           OPENRESTY_TAG=$(echo "$VERSION" | cut -d'-' -f1,2)
           RESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
           DISTRO=$(echo "$VERSION" | rev | cut -d'-' -f1 | rev)
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "OPENRESTY_TAG=${OPENRESTY_TAG}" >> "$GITHUB_ENV"
           echo "RESTY_VERSION=${RESTY_VERSION}" >> "$GITHUB_ENV"
           echo "DISTRO=${DISTRO}" >> "$GITHUB_ENV"
@@ -55,6 +58,6 @@ jobs:
           build-args: |
             RESTY_VERSION=${{ env.RESTY_VERSION }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ github.event.inputs.VERSION }}
-          cache-from: type=gha,scope=${{ github.event.inputs.VERSION }}
-          cache-to: type=gha,scope=${{ github.event.inputs.VERSION }},mode=max
+            ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.VERSION }}
+          cache-from: type=gha,scope=${{ env.VERSION }}
+          cache-to: type=gha,scope=${{ env.VERSION }},mode=max
