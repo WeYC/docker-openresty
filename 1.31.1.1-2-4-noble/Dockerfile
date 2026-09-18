@@ -173,6 +173,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && CFLAGS="-g -O3" make -j${RESTY_J} \
     && CFLAGS="-g -O3" make -j${RESTY_J} install \
     && cd /tmp \
+    && _SAVED_CFLAGS="${CFLAGS}" && unset CFLAGS \
     && git clone --recursive https://github.com/google/ngx_brotli.git \
     && cd ngx_brotli \
     && git checkout master \
@@ -185,6 +186,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         .. \
     && cmake --build . --config Release -j${RESTY_J} \
     && cmake --build . --target install \
+    && export CFLAGS="${_SAVED_CFLAGS}" \
     && ldconfig \
     && cd /tmp \
 #    && curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
@@ -216,7 +218,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && rm -rf luarocks-${RESTY_LUAROCKS_VERSION} luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
     && if [ -n "${RESTY_ADD_PACKAGE_BUILDDEPS}" ]; then DEBIAN_FRONTEND=noninteractive apt-get remove -y --purge ${RESTY_ADD_PACKAGE_BUILDDEPS} ; fi \
     && DEBIAN_FRONTEND=noninteractive apt-get autoremove -y \
-    && mkdir -p /var/run/openresty \
+    && mkdir -p /var/run/openresty /usr/local/openresty/nginx/conf/modules-enabled \
     && ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \
     && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log
 
@@ -239,10 +241,6 @@ COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
 RUN bash /tmp/default.sh
 
 COPY 1pwaf /usr/local/openresty/1pwaf
-
-COPY 1.31.1.1-2-4-noble/Dockerfile.modules 1.31.1.1-2-4-noble/module.catalog.json 1.31.1.1-2-4-noble/1panel-seed.sh /opt/1panel-seed/
-RUN chmod +x /opt/1panel-seed/1panel-seed.sh
-ENTRYPOINT ["/opt/1panel-seed/1panel-seed.sh"]
 
 CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
 
