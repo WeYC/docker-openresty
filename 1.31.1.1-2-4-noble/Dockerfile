@@ -130,7 +130,8 @@ RUN if [ -n "${CONTAINER_PACKAGE_URL}" ]; then \
     
 # COPY --from=panel-openresty /usr/local/openresty/modules/ngx_brotli /usr/local/openresty/modules/ngx_brotli
 
-RUN bash /tmp/default.sh
+# RUN bash /tmp/default.sh
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && bash /tmp/default.sh
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
