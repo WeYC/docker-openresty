@@ -5,12 +5,15 @@ name: CI
 #   1.27.1.2-5-1-focal,1.31.1.1-2-4-noble
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       VERSIONS:
         description: "Comma-separated 1Panel versions"
         required: true
-        default: "1.27.1.2-5-1-focal,1.31.1.1-2-4-noble"
+        default: "1.31.1.1-2-4-noble"
         type: string
 
 jobs:
@@ -21,7 +24,9 @@ jobs:
     steps:
       - id: versions
         run: |
-          MATRIX=$(echo "${{ inputs.VERSIONS }}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' | jq -R . | jq -s -c .)
+          VERSIONS="${{ inputs.VERSIONS }}"
+          if [ -z "$VERSIONS" ]; then VERSIONS="1.31.1.1-2-4-noble"; fi
+          MATRIX=$(echo "$VERSIONS" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' | jq -R . | jq -s -c .)
           if [ "${MATRIX}" = "[]" ]; then echo "No versions provided"; exit 1; fi
           echo "matrix=${MATRIX}" >> "$GITHUB_OUTPUT"
 

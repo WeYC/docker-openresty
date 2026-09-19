@@ -141,6 +141,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         libncurses5-dev \
         libperl-dev \
         libreadline-dev \
+        libsqlite3-dev \
         libxslt1-dev \
         make \
         perl \

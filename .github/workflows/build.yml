@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       VERSION:
-        description: "1Panel version, e.g. 1.27.1.2-5-1-focal"
+        description: "1Panel version, e.g. 1.31.1.1-2-4-noble"
         required: true
-        default: "1.27.1.2-5-1-focal"
+        default: "1.31.1.1-2-4-noble"
         type: string
   workflow_call:
     inputs:
       VERSION:
-        description: "1Panel version, e.g. 1.27.1.2-5-1-focal"
+        description: "1Panel version, e.g. 1.31.1.1-2-4-noble"
         required: true
         type: string
     secrets:
