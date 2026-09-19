@@ -1,0 +1,23 @@
+# Ignore
+.gitignore
+
+# Logs
+logs
+*.log
+
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+
+# Agents
+AGENTS.md
+
+# Playwright
+.playwright-mcp/
+
+# 1panel
+1panel/
+
+# openresty
+openresty/
