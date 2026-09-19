@@ -244,7 +244,8 @@ RUN cd /tmp \
     && /usr/local/openresty/luajit/bin/luarocks install luafilesystem \
     && git clone --depth 1 https://github.com/client9/libinjection.git /tmp/libinjection \
     && cd /tmp/libinjection/src \
-    && gcc -O2 -fPIC -shared -o /usr/local/openresty/1pwaf/libraries/libinjection.so $(ls *.c | grep -v -E '^(main|test)') \
+#    && gcc -O2 -fPIC -shared -o /usr/local/openresty/1pwaf/libraries/libinjection.so $(ls *.c | grep -v -E '^(main|test)') \
+    && gcc -O2 -fPIC -shared -o /usr/local/openresty/1pwaf/libraries/libinjection.so libinjection*.c \
     && ldconfig \
     && cd /tmp \
     && if [ -n "${RESTY_EVAL_POST_MAKE}" ]; then eval $(echo ${RESTY_EVAL_POST_MAKE}); fi \
