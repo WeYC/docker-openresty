@@ -130,6 +130,8 @@ RUN if [ -n "${CONTAINER_PACKAGE_URL}" ]; then \
     
 # COPY --from=panel-openresty /usr/local/openresty/modules/ngx_brotli /usr/local/openresty/modules/ngx_brotli
 
+RUN bash /tmp/default.sh
+
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential \
@@ -141,7 +143,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         libncurses5-dev \
         libperl-dev \
         libreadline-dev \
-        libsqlite3-dev \
         libxslt1-dev \
         make \
         perl \
@@ -224,7 +225,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && make build \
     && make install \
     && cd /tmp \
-    && mkdir -p /usr/local/openresty/1pwaf/libraries \
     && tar -zxf libmaxminddb.tar.gz \
     && cd libmaxminddb && ./configure && make && make install \
     && cp -a /usr/local/lib/libmaxminddb.so* /usr/local/openresty/1pwaf/libraries/ \
@@ -261,7 +261,7 @@ ENV LUA_CPATH="/usr/local/openresty/site/lualib/?.so;/usr/local/openresty/lualib
 COPY nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
 COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
 
-RUN bash /tmp/default.sh
+# RUN bash /tmp/default.sh (moved before main RUN so dev headers exist for self-compile)
 
 # COPY --from=panel-openresty /usr/local/openresty/1pwaf /usr/local/openresty/1pwaf
 # COPY --from=panel-openresty /usr/local/openresty/1pwaf/libraries/libmaxminddb.so /usr/local/openresty/1pwaf/libraries/libmaxminddb.so
