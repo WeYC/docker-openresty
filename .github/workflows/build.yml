@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup environment variables
         id: version
@@ -35,6 +35,22 @@ jobs:
           RESTY_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "RESTY_VERSION=${RESTY_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Checkout 1Panel-dev appstore
+        uses: actions/checkout@v7
+        with:
+          repository: 1Panel-dev/appstore
+          ref: dev
+          path: appstore
+          sparse-checkout: |
+            apps/openresty/${{ env.VERSION }}/build/tmp
+          sparse-checkout-cone-mode: false
+
+      - name: Copy tmp into build context
+        run: |
+          mkdir -p tmp
+          cp -a "appstore/apps/openresty/${{ env.VERSION }}/build/tmp/." tmp/
+          ls -la tmp | head -30
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -49,7 +65,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./${{ env.VERSION }}/Dockerfile

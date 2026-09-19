@@ -1,7 +1,11 @@
 # Dockerfile - Ubuntu Noble
 # https://github.com/openresty/docker-openresty
+
 ARG RESTY_IMAGE_BASE="ubuntu"
 ARG RESTY_IMAGE_TAG="noble"
+
+# ARG PANEL_OPENRESTY_VERSION
+# FROM 1panel/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
 
 FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
@@ -79,6 +83,7 @@ ARG RESTY_ADD_PACKAGE_BUILDDEPS=""
 ARG RESTY_ADD_PACKAGE_RUNDEPS=""
 ARG RESTY_EVAL_PRE_CONFIGURE=""
 ARG RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE=""
+ARG RESTY_EVAL_PRE_MAKE=""
 ARG RESTY_EVAL_POST_MAKE=""
 
 # These are not intended to be user-specified
@@ -105,6 +110,7 @@ LABEL resty_add_package_builddeps="${RESTY_ADD_PACKAGE_BUILDDEPS}"
 LABEL resty_add_package_rundeps="${RESTY_ADD_PACKAGE_RUNDEPS}"
 LABEL resty_eval_pre_configure="${RESTY_EVAL_PRE_CONFIGURE}"
 LABEL resty_eval_post_download_pre_configure="${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}"
+LABEL resty_eval_pre_make="${RESTY_EVAL_PRE_MAKE}"
 LABEL resty_eval_post_make="${RESTY_EVAL_POST_MAKE}"
 LABEL resty_luajit_options="${RESTY_LUAJIT_OPTIONS}"
 LABEL resty_pcre_options="${RESTY_PCRE_OPTIONS}"
@@ -121,6 +127,8 @@ RUN if [ -n "${CONTAINER_PACKAGE_URL}" ]; then \
         && sed -i "s|http://security.ubuntu.com/ubuntu/|${CONTAINER_PACKAGE_URL}|g" /etc/apt/sources.list.d/ubuntu.sources; \
       fi; \
     fi
+    
+# COPY --from=panel-openresty /usr/local/openresty/modules/ngx_brotli /usr/local/openresty/modules/ngx_brotli
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -146,7 +154,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && cd /tmp \
     && bash /tmp/pre.sh \
     && if [ -n "${RESTY_EVAL_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_PRE_CONFIGURE}); fi \
-    && curl -fSL "${RESTY_OPENSSL_URL_BASE}/openssl-${RESTY_OPENSSL_VERSION}.tar.gz" -o openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
+#    && curl -fSL "${RESTY_OPENSSL_URL_BASE}/openssl-${RESTY_OPENSSL_VERSION}.tar.gz" -o openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
     && tar xzf openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
     && cd openssl-${RESTY_OPENSSL_VERSION} \
     && echo 'patching OpenSSL 3.x for OpenResty' \
@@ -190,8 +198,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && if [ ! -d openresty-${RESTY_VERSION} ]; then tar xzf openresty-${RESTY_VERSION}.tar.gz; fi \
     && cd /tmp/openresty-${RESTY_VERSION} \
     && if [ -n "${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}); fi \
+#    && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
     && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
         --add-dynamic-module=/tmp/ngx_brotli \
+    && if [ -n "${RESTY_EVAL_PRE_MAKE}" ]; then eval $(echo ${RESTY_EVAL_PRE_MAKE}); fi \
     && make -j${RESTY_J} \
     && make -j${RESTY_J} install \
     && mkdir -p /usr/local/openresty/modules/ngx_brotli \
@@ -213,6 +223,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && make build \
     && make install \
     && cd /tmp \
+    && mkdir -p /usr/local/openresty/1pwaf/libraries \
     && tar -zxf libmaxminddb.tar.gz \
     && cd libmaxminddb && ./configure && make && make install \
     && cp -a /usr/local/lib/libmaxminddb.so* /usr/local/openresty/1pwaf/libraries/ \
@@ -228,9 +239,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && rm -rf luarocks-${RESTY_LUAROCKS_VERSION} luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
     && if [ -n "${RESTY_ADD_PACKAGE_BUILDDEPS}" ]; then DEBIAN_FRONTEND=noninteractive apt-get remove -y --purge ${RESTY_ADD_PACKAGE_BUILDDEPS} ; fi \
     && DEBIAN_FRONTEND=noninteractive apt-get autoremove -y \
+#    && mkdir -p /var/run/openresty \
     && mkdir -p /var/run/openresty /usr/local/openresty/nginx/conf/modules-enabled \
     && ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \
-    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log
+    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log 
 
 # Add additional binaries into PATH for convenience
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
@@ -250,6 +262,11 @@ COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
 
 RUN bash /tmp/default.sh
 
+# COPY --from=panel-openresty /usr/local/openresty/1pwaf /usr/local/openresty/1pwaf
+# COPY --from=panel-openresty /usr/local/openresty/1pwaf/libraries/libmaxminddb.so /usr/local/openresty/1pwaf/libraries/libmaxminddb.so
+# COPY --from=panel-openresty /usr/local/openresty/1pwaf/libraries/libinjection.so /usr/local/openresty/1pwaf/libraries/libinjection.so
+# COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so
+# COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lfs.so  /usr/local/openresty/luajit/lib/lua/5.1/lfs.so
 COPY 1pwaf /usr/local/openresty/1pwaf
 
 CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
