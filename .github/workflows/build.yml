@@ -78,3 +78,11 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.VERSION }}
           cache-from: type=gha,scope=${{ env.VERSION }}
           cache-to: type=gha,scope=${{ env.VERSION }},mode=max
+
+      # QEMU smoke test on the pushed arm/v7 image
+      - name: Smoke test
+        run: |
+          IMG="${{ secrets.DOCKERHUB_USERNAME }}/openresty:${{ env.VERSION }}"
+          docker run --rm --platform linux/arm/v7 "$IMG" openresty -t
+          docker run --rm --platform linux/arm/v7 "$IMG" openresty -V
+          docker run --rm --platform linux/arm/v7 "$IMG" resty -e 'require("lsqlite3"); require("lfs"); print("rocks-ok")'

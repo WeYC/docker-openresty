@@ -325,6 +325,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && mkdir -p /var/run/openresty /usr/local/openresty/nginx/conf/modules-enabled
 
 COPY --from=builder /usr/local/openresty /usr/local/openresty
+COPY --from=builder /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /usr/local/lib/libbrotli*.so* /usr/local/lib/
 COPY --from=builder /usr/local/lib/libmaxminddb.so* /usr/local/lib/
 
