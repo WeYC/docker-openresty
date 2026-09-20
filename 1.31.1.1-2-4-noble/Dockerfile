@@ -7,7 +7,7 @@ ARG RESTY_IMAGE_TAG="noble"
 # ARG PANEL_OPENRESTY_VERSION
 # FROM 1panel/openresty:${PANEL_OPENRESTY_VERSION} as panel-openresty
 
-FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
+FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG} AS builder
 
 LABEL maintainer="Evan Wies <evan@neomantra.net>"
 
@@ -297,6 +297,51 @@ COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
 # COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so /usr/local/openresty/luajit/lib/lua/5.1/lsqlite3.so
 # COPY --from=panel-openresty /usr/local/openresty/luajit/lib/lua/5.1/lfs.so  /usr/local/openresty/luajit/lib/lua/5.1/lfs.so
 COPY 1pwaf /usr/local/openresty/1pwaf
+
+CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
+
+# Use SIGQUIT instead of default SIGTERM to cleanly drain requests
+# See https://github.com/openresty/docker-openresty/blob/master/README.md#tips--pitfalls
+STOPSIGNAL SIGQUIT
+
+# ---- runtime: only artifacts, no toolchain ----
+ARG RESTY_IMAGE_BASE
+ARG RESTY_IMAGE_TAG
+
+FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
+
+LABEL maintainer="Evan Wies <evan@neomantra.net>"
+
+# Runtime libs only (names verified against noble armhf Packages;
+# libexslt ships inside libxslt1.1, libgeoip1t64 comes from universe)
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libgd3 \
+        libgeoip1t64 \
+        libsqlite3-0 \
+        libxslt1.1 \
+    && DEBIAN_FRONTEND=noninteractive apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /var/run/openresty /usr/local/openresty/nginx/conf/modules-enabled
+
+COPY --from=builder /usr/local/openresty /usr/local/openresty
+COPY --from=builder /usr/local/lib/libbrotli*.so* /usr/local/lib/
+COPY --from=builder /usr/local/lib/libmaxminddb.so* /usr/local/lib/
+
+RUN ldconfig \
+    && ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \
+    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log
+
+# Add additional binaries into PATH for convenience
+ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
+
+# Add LuaRocks paths
+# If OpenResty changes, these may need updating:
+#    /usr/local/openresty/bin/resty -e 'print(package.path)'
+#    /usr/local/openresty/bin/resty -e 'print(package.cpath)'
+ENV LUA_PATH="/usr/local/openresty/site/lualib/?.ljbc;/usr/local/openresty/site/lualib/?/init.ljbc;/usr/local/openresty/lualib/?.ljbc;/usr/local/openresty/lualib/?/init.ljbc;/usr/local/openresty/site/lualib/?.lua;/usr/local/openresty/site/lualib/?/init.lua;/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/?/init.lua;./?.lua;/usr/local/openresty/luajit/share/luajit-2.1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua;/usr/local/openresty/luajit/share/lua/5.1/?.lua;/usr/local/openresty/luajit/share/lua/5.1/?/init.lua"
+
+ENV LUA_CPATH="/usr/local/openresty/site/lualib/?.so;/usr/local/openresty/lualib/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/openresty/luajit/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so;/usr/local/openresty/luajit/lib/lua/5.1/?.so"
 
 CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
 
