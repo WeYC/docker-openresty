@@ -1,7 +1,7 @@
 name: Retag Image
 
 # One-off backup: copy a Hub tag reference without pulling/pushing layers.
-# Example: src=1.31.1.1-2-4-noble dest=Sep-20-2026
+# Example: src=1.31.1.1-2-4-noble dest=2026-09-20
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
       dest:
         description: "New backup tag to create"
         required: true
-        default: "Sep-20-2026"
+        default: "2026-09-20"
         type: string
 
 jobs:
