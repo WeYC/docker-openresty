@@ -169,7 +169,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
       -Wl,-rpath,/usr/local/openresty/openssl3/lib \
       ${RESTY_OPENSSL_BUILD_OPTIONS} \
     && make -j${RESTY_J} \
-    && make -j${RESTY_J} install_sw
+    && make -j${RESTY_J} install_sw \
+    && find /usr/local/openresty/openssl3/lib -type f -name '*.so.*' -exec strip --strip-unneeded {} + \
+    && rm -f /usr/local/openresty/openssl3/lib/*.a \
+    && rm -rf /tmp/openssl-${RESTY_OPENSSL_VERSION}.tar.gz /tmp/openssl-${RESTY_OPENSSL_VERSION}
 
 RUN cd /tmp \
     && if [ -n "${RESTY_EVAL_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_PRE_CONFIGURE}); fi \
@@ -182,7 +185,10 @@ RUN cd /tmp \
         --libdir=/usr/local/openresty/pcre2/lib \
         ${RESTY_PCRE_BUILD_OPTIONS} \
     && CFLAGS="-g -O3" make -j${RESTY_J} \
-    && CFLAGS="-g -O3" make -j${RESTY_J} install
+    && CFLAGS="-g -O3" make -j${RESTY_J} install \
+    && find /usr/local/openresty/pcre2/lib -type f -name '*.so.*' -exec strip --strip-unneeded {} + \
+    && rm -f /usr/local/openresty/pcre2/lib/*.a /usr/local/openresty/pcre2/lib/*.la \
+    && rm -rf /tmp/pcre2-${RESTY_PCRE_VERSION}.tar.gz /tmp/pcre2-${RESTY_PCRE_VERSION}
 
 RUN cd /tmp \
     && if [ -n "${RESTY_EVAL_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_PRE_CONFIGURE}); fi \
@@ -199,7 +205,8 @@ RUN cd /tmp \
     && cmake --build . --config Release -j${RESTY_J} \
     && cmake --build . --target install \
     && export CFLAGS="${_SAVED_CFLAGS}" \
-    && ldconfig
+    && ldconfig \
+    && rm -rf /tmp/ngx_brotli/.git /tmp/ngx_brotli/deps/brotli/.git /tmp/ngx_brotli/deps/brotli/out
 
 RUN cd /tmp \
     && if [ -n "${RESTY_EVAL_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_PRE_CONFIGURE}); fi \
@@ -215,8 +222,11 @@ RUN cd /tmp \
     && make -j${RESTY_J} install \
     && mkdir -p /usr/local/openresty/modules/ngx_brotli \
     && cp /tmp/openresty-${RESTY_VERSION}/build/nginx-*/objs/ngx_http_brotli_*.so /usr/local/openresty/modules/ngx_brotli/ \
-    && cp -r /tmp/ngx_brotli/. /usr/local/openresty/modules/ngx_brotli/ \
-    && rm -rf /usr/local/openresty/modules/ngx_brotli/.git /usr/local/openresty/modules/ngx_brotli/deps/brotli/.git \
+#    && cp -r /tmp/ngx_brotli/. /usr/local/openresty/modules/ngx_brotli/ \
+#    && rm -rf /usr/local/openresty/modules/ngx_brotli/.git /usr/local/openresty/modules/ngx_brotli/deps/brotli/.git \
+    && strip --strip-unneeded /usr/local/openresty/nginx/sbin/nginx \
+    && find /usr/local/openresty/nginx/modules /usr/local/openresty/modules /usr/local/openresty/luajit/lib -type f -name '*.so*' -exec strip --strip-unneeded {} + \
+    && find /usr/local/openresty -type f \( -name '*.a' -o -name '*.la' \) -delete \
     && cd /tmp \
     && rm -rf \
         openssl-${RESTY_OPENSSL_VERSION}.tar.gz openssl-${RESTY_OPENSSL_VERSION} \
@@ -250,12 +260,18 @@ RUN cd /tmp \
     && cd /tmp \
     && if [ -n "${RESTY_EVAL_POST_MAKE}" ]; then eval $(echo ${RESTY_EVAL_POST_MAKE}); fi \
     && rm -rf luarocks-${RESTY_LUAROCKS_VERSION} luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
+    && rm -rf /tmp/libmaxminddb /tmp/libmaxminddb.tar.gz /tmp/libinjection \
+    && rm -f /usr/local/lib/*.a /usr/local/lib/*.la \
+    && find /usr/local/openresty/1pwaf/libraries /usr/local/openresty/luajit/lib/lua -type f -name '*.so' -exec strip --strip-unneeded {} + \
     && if [ -n "${RESTY_ADD_PACKAGE_BUILDDEPS}" ]; then DEBIAN_FRONTEND=noninteractive apt-get remove -y --purge ${RESTY_ADD_PACKAGE_BUILDDEPS} ; fi \
     && DEBIAN_FRONTEND=noninteractive apt-get autoremove -y \
+    && DEBIAN_FRONTEND=noninteractive apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
 #    && mkdir -p /var/run/openresty \
     && mkdir -p /var/run/openresty /usr/local/openresty/nginx/conf/modules-enabled \
     && ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \
-    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log 
+    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log \
+    && rm -rf /tmp/* /root/.cache
 
 # Add additional binaries into PATH for convenience
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
