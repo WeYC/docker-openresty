@@ -222,8 +222,8 @@ RUN cd /tmp \
     && make -j${RESTY_J} install \
     && mkdir -p /usr/local/openresty/modules/ngx_brotli \
     && cp /tmp/openresty-${RESTY_VERSION}/build/nginx-*/objs/ngx_http_brotli_*.so /usr/local/openresty/modules/ngx_brotli/ \
-#    && cp -r /tmp/ngx_brotli/. /usr/local/openresty/modules/ngx_brotli/ \
-#    && rm -rf /usr/local/openresty/modules/ngx_brotli/.git /usr/local/openresty/modules/ngx_brotli/deps/brotli/.git \
+    && cp -r /tmp/ngx_brotli/. /usr/local/openresty/modules/ngx_brotli/ \
+    && rm -rf /usr/local/openresty/modules/ngx_brotli/.git /usr/local/openresty/modules/ngx_brotli/deps/brotli/.git /usr/local/openresty/modules/ngx_brotli/deps/brotli/out \
     && strip --strip-unneeded /usr/local/openresty/nginx/sbin/nginx \
     && find /usr/local/openresty/nginx/modules /usr/local/openresty/modules /usr/local/openresty/luajit/lib -type f -name '*.so*' -exec strip --strip-unneeded {} + \
     && find /usr/local/openresty -type f \( -name '*.a' -o -name '*.la' \) -delete \
