@@ -2,7 +2,7 @@ name: CI
 
 # Orchestrator entrypoint: fan out one build per version, then cleanup.
 # Manual trigger with comma-separated versions, e.g.
-#   1.27.1.2-5-1-focal,1.31.1.1-2-4-noble
+#   1.27.1.2-5-1-focal,1.31.8.1-2-2-noble
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
       VERSIONS:
         description: "Comma-separated 1Panel versions"
         required: true
-        default: "1.31.1.1-2-4-noble"
+        default: "1.31.8.1-2-2-noble"
         type: string
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - id: versions
         run: |
           VERSIONS="${{ inputs.VERSIONS }}"
-          if [ -z "$VERSIONS" ]; then VERSIONS="1.31.1.1-2-4-noble"; fi
+          if [ -z "$VERSIONS" ]; then VERSIONS="1.31.8.1-2-2-noble"; fi
           MATRIX=$(echo "$VERSIONS" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' | jq -R . | jq -s -c .)
           if [ "${MATRIX}" = "[]" ]; then echo "No versions provided"; exit 1; fi
           echo "matrix=${MATRIX}" >> "$GITHUB_OUTPUT"

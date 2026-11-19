@@ -1,7 +1,7 @@
 name: Retag Image
 
 # One-off backup: copy a Hub tag reference without pulling/pushing layers.
-# Example: src=1.31.1.1-2-4-noble dest=2026-09-20
+# Example: src=1.31.8.1-2-2-noble dest=2026-09-20
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
       src:
         description: "Source tag to copy from"
         required: true
-        default: "1.31.1.1-2-4-noble"
+        default: "1.31.8.1-2-2-noble"
         type: string
       dest:
         description: "New backup tag to create"
