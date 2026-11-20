@@ -129,6 +129,7 @@ RUN if [ -n "${CONTAINER_PACKAGE_URL}" ]; then \
     fi
     
 # COPY --from=panel-openresty /usr/local/openresty/modules/ngx_brotli /usr/local/openresty/modules/ngx_brotli
+COPY patches/nginx-1.31.8-security-20261118.patch /usr/local/openresty/patches/
 
 # RUN bash /tmp/default.sh
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && bash /tmp/default.sh
@@ -213,9 +214,11 @@ RUN cd /tmp \
 #    && curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
     && if [ ! -d openresty-${RESTY_VERSION} ]; then tar xzf openresty-${RESTY_VERSION}.tar.gz; fi \
     && cd /tmp/openresty-${RESTY_VERSION} \
+    && echo "740316cc5e82b42ec85537dcbb158cd75a440ac2860e5ed7f73d864d0074c160  /usr/local/openresty/patches/nginx-1.31.8-security-20261118.patch" | sha256sum -c - \
+    && git -C bundle/nginx-1.31.8 apply /usr/local/openresty/patches/nginx-1.31.8-security-20261118.patch \
     && if [ -n "${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}); fi \
 #    && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
-    && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
+    && eval ./configure --build=1Panel-security-20261118 -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
         --add-dynamic-module=/tmp/ngx_brotli \
     && if [ -n "${RESTY_EVAL_PRE_MAKE}" ]; then eval $(echo ${RESTY_EVAL_PRE_MAKE}); fi \
     && make -j${RESTY_J} \

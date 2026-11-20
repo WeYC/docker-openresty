@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       VERSION:
-        description: "1Panel version, e.g. 1.31.1.1-2-4-noble"
+        description: "1Panel version, e.g. 1.31.8.1-2-2-noble"
         required: true
-        default: "1.31.1.1-2-4-noble"
+        default: "1.31.8.1-2-2-noble"
         type: string
   workflow_call:
     inputs:
       VERSION:
-        description: "1Panel version, e.g. 1.31.1.1-2-4-noble"
+        description: "1Panel version, e.g. 1.31.8.1-2-2-noble"
         required: true
         type: string
     secrets:
